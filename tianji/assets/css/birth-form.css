@@ -1,0 +1,277 @@
+/* 天机 · 生辰录入 */
+.sheet-mask.birth-mask { background: rgba(6, 11, 15, .63); }
+
+.sheet.birth-sheet {
+  --birth-bg: #171e24;
+  --birth-surface: #202a31;
+  --birth-text: #f1eee6;
+  --birth-muted: #b4bfc4;
+  --birth-border: #56666d;
+  --birth-accent: #ebcc91;
+  --birth-error: #ffb6a8;
+  background: var(--birth-bg);
+  color: var(--birth-text);
+  border-color: var(--birth-border);
+  color-scheme: dark;
+  overscroll-behavior: contain;
+  box-shadow: 0 -12px 32px rgba(6, 11, 15, .3);
+}
+
+.birth-sheet:focus { outline: none; }
+
+.birth-sheet :is(button, input, summary, [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--birth-accent);
+  outline-offset: 2px;
+}
+
+.birth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.birth-header h2 { font-size: 22px; line-height: 1.35; font-weight: 650; }
+.birth-kicker { margin-bottom: 3px; color: var(--birth-accent); font-size: 12px; }
+
+.birth-close {
+  flex: 0 0 44px;
+  height: 44px;
+  border: 1px solid var(--birth-border);
+  border-radius: 50%;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.birth-legacy {
+  margin-bottom: 12px;
+  padding: 9px 11px;
+  border-left: 2px solid var(--birth-accent);
+  background: var(--birth-surface);
+  color: var(--birth-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.birth-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.birth-field {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-height: 57px;
+  padding: 8px 26px 8px 11px;
+  border: 1px solid var(--birth-border);
+  border-radius: 9px;
+  background: var(--birth-surface);
+  text-align: left;
+}
+
+.birth-field::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 6px;
+  height: 6px;
+  border-top: 1px solid var(--birth-muted);
+  border-right: 1px solid var(--birth-muted);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.birth-field-city { grid-column: 1 / -1; }
+.birth-field span, .birth-label { color: var(--birth-muted); font-size: 12px; }
+.birth-field strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+
+.birth-gender {
+  display: grid;
+  grid-template-columns: auto repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.birth-gender button {
+  min-height: 44px;
+  border: 1px solid var(--birth-border);
+  border-radius: 8px;
+  color: var(--birth-muted);
+  font-size: 13px;
+}
+
+.birth-gender button[aria-pressed="true"] {
+  border-color: var(--birth-accent);
+  background: #3e3425;
+  color: var(--birth-accent);
+}
+
+.birth-offset { margin: 3px 0 8px; }
+
+.birth-offset summary {
+  width: fit-content;
+  min-height: 44px;
+  padding: 13px 4px;
+  color: var(--birth-muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.birth-offset label, .birth-search-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--birth-muted);
+  font-size: 12px;
+}
+
+.birth-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--birth-border);
+  border-radius: 8px;
+  background: var(--birth-surface);
+  color: var(--birth-text);
+  font: inherit;
+  font-size: 16px;
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+.birth-input::placeholder { color: var(--birth-muted); }
+
+.birth-hint {
+  margin: 6px 0 0;
+  color: var(--birth-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.birth-preview {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--birth-border);
+  border-radius: 9px;
+  background: var(--birth-surface);
+}
+
+.birth-preview dl { margin: 0; }
+
+.birth-preview dl div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 0;
+}
+
+.birth-preview dt { color: var(--birth-muted); font-size: 12px; }
+
+.birth-preview dd {
+  margin: 0;
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.birth-preview dd[data-preview="solar"] { color: var(--birth-accent); }
+
+.birth-preview-detail {
+  margin-top: 4px;
+  color: var(--birth-muted);
+  text-align: right;
+  font-size: 12px;
+}
+
+.birth-error { margin-top: 8px; color: var(--birth-error); font-size: 13px; line-height: 1.45; }
+
+.birth-primary {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: var(--birth-accent);
+  color: #211b12;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.birth-wheels {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 14px;
+}
+
+.birth-wheel-group { flex: 1; min-width: 0; }
+.birth-wheel-label { margin: 0 0 5px; color: var(--birth-muted); text-align: center; font-size: 12px; }
+
+.birth-wheel {
+  --birth-wheel-row: 40px;
+  --birth-wheel-pad: 56px;
+  height: calc(var(--birth-wheel-pad) * 2 + var(--birth-wheel-row));
+  overflow-y: auto;
+  border-radius: 8px;
+  background: linear-gradient(var(--birth-surface), var(--birth-surface)) center / 100% var(--birth-wheel-row) no-repeat;
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.birth-wheel::-webkit-scrollbar { display: none; }
+.birth-wheel-pad { height: var(--birth-wheel-pad); }
+
+.birth-wheel-item {
+  height: var(--birth-wheel-row);
+  line-height: var(--birth-wheel-row);
+  scroll-snap-align: center;
+  text-align: center;
+  font-size: 17px;
+  color: var(--birth-muted);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.birth-wheel-selected { color: var(--birth-accent); font-weight: 700; }
+
+.birth-search-status { min-height: 19px; margin-bottom: 6px; }
+
+.birth-city-results {
+  max-height: 43vh;
+  max-height: min(43dvh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline: 3px;
+}
+
+.birth-city-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 7px;
+  border-bottom: 1px solid var(--birth-border);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.birth-city-name { color: var(--birth-text); font-size: 14px; }
+.birth-city-region { color: var(--birth-muted); text-align: right; font-size: 12px; }
+.birth-city-selected .birth-city-name { color: var(--birth-accent); }
+
+@media (max-width: 340px) {
+  .birth-field { padding-left: 8px; }
+  .birth-preview { padding-inline: 8px; }
+  .birth-preview dd { font-size: 12px; }
+}

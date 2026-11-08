@@ -132,6 +132,27 @@ public class MainActivity extends Activity {
 
     public class Bridge {
         @JavascriptInterface
+        public void setChartBars(final boolean dark) {
+            runOnUiThread(() -> {
+                View decor = getWindow().getDecorView();
+                if (Build.VERSION.SDK_INT >= 30) {
+                    WindowInsetsController controller = decor.getWindowInsetsController();
+                    if (controller != null) {
+                        int light = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                        controller.setSystemBarsAppearance(dark ? 0 : light, light);
+                    }
+                } else {
+                    int light = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                    if (Build.VERSION.SDK_INT >= 26) light |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                    int flags = decor.getSystemUiVisibility();
+                    decor.setSystemUiVisibility(dark ? flags & ~light : flags | light);
+                }
+                web.setBackgroundColor(Color.parseColor(dark ? "#141716" : PAPER));
+            });
+        }
+
+        @JavascriptInterface
         public void vibrate(final int ms) {
             runOnUiThread(() -> {
                 try {

@@ -6,7 +6,7 @@
 
   var L;
   if (typeof module !== 'undefined' && module.exports) { L = require('./vendor/lunar.js'); }
-  else { L = { Solar: root.Solar, Lunar: root.Lunar }; }
+  else { L = { Solar: root.Solar, Lunar: root.Lunar, LunarUtil: root.LunarUtil }; }
 
   var GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
   var ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -80,14 +80,33 @@
   }
 
   function chart(birth) {
-    var hour = ZHI_HOUR[birth.zhi] + 0.5;
-    var solar = L.Solar.fromYmdHms(birth.y, birth.m, birth.d, Math.floor(hour), 30, 0);
+    var corrected = birth.city ? root.TianjiSolar.correct(birth) : null;
+    var clock = corrected || {
+      y: birth.y, m: birth.m, d: birth.d, hour: ZHI_HOUR[birth.zhi], minute: 30, second: 0
+    };
+    var solar = L.Solar.fromYmdHms(clock.y, clock.m, clock.d, clock.hour, clock.minute, clock.second);
     var lunar = solar.getLunar();
     var ec = lunar.getEightChar();
+    // The ephemeris in lunar.js expresses solar terms in UTC+08:00.
+    // Use the physical birth instant for year, month and 起运, and the
+    // apparent solar clock at the birthplace for the day and hour pillars.
+    var terms = lunar;
+    if (corrected) {
+      var china = new Date(corrected.utcMillis + 8 * 3600000);
+      terms = L.Solar.fromYmdHms(china.getUTCFullYear(), china.getUTCMonth() + 1, china.getUTCDate(),
+        china.getUTCHours(), china.getUTCMinutes(), china.getUTCSeconds()).getLunar();
+    }
+    var termsEC = terms.getEightChar();
+
+    function fromTerms(label, gz, hidden, nayin) {
+      var day = ec.getDayGan();
+      return pillar(label, gz, hidden, nayin, shiShen(day, gz[0]),
+        hidden.map(function (gan) { return shiShen(day, gan); }));
+    }
 
     var pillars = [
-      pillar('年', ec.getYear(), ec.getYearHideGan(), ec.getYearNaYin(), ec.getYearShiShenGan(), ec.getYearShiShenZhi()),
-      pillar('月', ec.getMonth(), ec.getMonthHideGan(), ec.getMonthNaYin(), ec.getMonthShiShenGan(), ec.getMonthShiShenZhi()),
+      fromTerms('年', termsEC.getYear(), termsEC.getYearHideGan(), termsEC.getYearNaYin()),
+      fromTerms('月', termsEC.getMonth(), termsEC.getMonthHideGan(), termsEC.getMonthNaYin()),
       pillar('日', ec.getDay(), ec.getDayHideGan(), ec.getDayNaYin(), '日主', ec.getDayShiShenZhi()),
       pillar('时', ec.getTime(), ec.getTimeHideGan(), ec.getTimeNaYin(), ec.getTimeShiShenGan(), ec.getTimeShiShenZhi())
     ];
@@ -145,11 +164,12 @@
 
     var yun = null;
     try {
-      var y = ec.getYun(birth.gender === 'f' ? 0 : 1);
+      var y = termsEC.getYun(birth.gender === 'f' ? 0 : 1);
       var list = y.getDaYun().filter(function (d) { return d.getGanZhi(); }).slice(0, 10);
       yun = {
         startYear: y.getStartYear(),
         startMonth: y.getStartMonth(),
+        startDay: y.getStartDay(),
         list: list.map(function (d) {
           var gz = d.getGanZhi();
           return {
@@ -162,16 +182,20 @@
 
     var jq = null;
     try {
-      var prev = lunar.getPrevJieQi(true);
-      var next = lunar.getNextJieQi(true);
+      var prev = terms.getPrevJieQi();
+      var next = terms.getNextJieQi();
       jq = {
         prev: prev.getName(), prevDate: prev.getSolar().toYmd(),
         next: next.getName(), nextDate: next.getSolar().toYmd()
       };
     } catch (e) { /* ignore */ }
 
+    // These two library calculations use year/month and hour, but never day.
+    var timeZhi = ec.getTimeZhi();
+    termsEC.getTimeZhi = function () { return timeZhi; };
     return {
-      solar: { y: birth.y, m: birth.m, d: birth.d, zhi: birth.zhi },
+      solar: { y: clock.y, m: clock.m, d: clock.d, zhi: ZHI.indexOf(pillars[3].zhi) },
+      corrected: corrected,
       lunar: {
         text: lunar.toString(),
         year: lunar.getYearInGanZhi(),
@@ -186,12 +210,14 @@
       strength: { label: label, ratio: Math.round(ratio * 100) / 100, verdict: verdict },
       favorable: { use: use, avoid: avoid, why: why },
       missing: missing,
-      taiYuan: ec.getTaiYuan ? ec.getTaiYuan() : '',
-      mingGong: ec.getMingGong ? ec.getMingGong() : '',
+      taiYuan: termsEC.getTaiYuan(),
+      mingGong: termsEC.getMingGong(),
+      shenGong: termsEC.getShenGong(),
       shenSha: shenSha(pillars, dayGan, pillars[0].gan, pillars[0].zhi, pillars[1].zhi),
       relations: relations(pillars),
       kong: xunKong(pillars[2].gz),
       changSheng: pillars.map(function (p) { return changSheng(p.gan, p.zhi); }),
+      dayStages: pillars.map(function (p) { return changSheng(dayGan, p.zhi); }),
       yun: yun,
       jieQi: jq
     };
@@ -533,6 +559,9 @@
     WX_DIR: WX_DIR,
     GAN_WX: GAN_WX,
     ZHI_WX: ZHI_WX,
+    ZHI_HIDE_GAN: L.LunarUtil.ZHI_HIDE_GAN,
+    WX_SHENG: WX_SHENG,
+    WX_KE: WX_KE,
     ZHI_LABEL: ZHI_LABEL,
     ZHI_RANGE: ZHI_RANGE,
     ZHI_HOUR: ZHI_HOUR

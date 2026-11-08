@@ -5,6 +5,7 @@
   var A = window.Astro;
   var HEX = window.HEXAGRAMS;
   var Solar = window.Solar;
+  var Pro = window.TianjiProChart;
 
   var K_BIRTH = 'tj.birth';
   var K_DRAW = 'tj.draw';
@@ -17,6 +18,8 @@
     daily: null,
     draw: null,
     shaking: false,
+    diagramTab: 'relations',
+    diagramYear: null,
     pref: { vibrate: true }
   };
 
@@ -216,19 +219,26 @@
     }).join('');
   }
 
+  function diagramFor(chart) {
+    var index = pickYunIndex(chart);
+    var yun = chart.yun && chart.yun.list[index];
+    var year = yun ? A.liunian(chart, clamp(state.diagramYear || new Date().getFullYear(), yun.start, yun.end), index) : null;
+    return Pro.diagram(chart, state.diagramTab, yun, year, state.birth.gender);
+  }
+
   function viewChart() {
     var c = getChart();
     if (!c) {
       return '<div class="page">' + pageHeading('四柱命盘', '从公历生辰起盘') +
         '<div class="card empty-hero">' +
         '<div class="glyph"><i></i><i></i><i class="b"></i><i></i><i></i><i class="b"></i></div>' +
-        '<h2>先立命盘</h2><p>公历生辰 + 时辰，即可排出四柱八字。<br>十神、神煞、大运流年，皆从此盘起。</p>' +
+        '<h2>先立命盘</h2><p>选择公历生日、钟表时分和出生城市。<br>按真太阳时排盘，查看本命解析与岁运。</p>' +
         '<button class="btn" data-act="open-birth">录入生辰</button>' +
         '</div></div>';
     }
 
     var p = c.pillars;
-    var kong = c.kong || [];
+    var result = window.TianjiInterpretation.analyze(c);
     function row(cls, label, fn) {
       var cells = p.map(function (x, i) {
         return '<div class="' + (i === 2 ? 'd' : '') + ' ' + (cls || '') + '">' + fn(x, i) + '</div>';
@@ -239,21 +249,23 @@
     var pillars =
       row('p-pillar', '四柱', function (x) { return esc(x.label) + '柱'; }) +
       row('p-ss', '十神', function (x) { return esc(x.shiShenGan); }) +
-      row('p-gan', '天干', function (x) { return esc(x.gan); }) +
-      row('p-zhi', '地支', function (x) {
-        return '<span class="zhiwrap">' + esc(x.zhi) + (kong.indexOf(x.zhi) >= 0 ? '<sup class="kong">空</sup>' : '') + '</span>';
+      row('p-gan', '天干', function (x) { return Pro.element(x.gan, x.ganWx); }) +
+      row('p-zhi', '地支', function (x) { return Pro.element(x.zhi, x.zhiWx); }) +
+      row('p-hide', '藏干', function (x) {
+        return '<div class="pro-hidden">' + x.hide.map(function (h) {
+          return '<span>' + Pro.element(h, A.GAN_WX[h]) +
+            '<small>' + A.shiShen(c.dayMaster.gan, h) + '</small></span>';
+        }).join('') + '</div>';
       }) +
-      row('p-hide', '藏干', function (x) { return (x.hide || []).join(' '); }) +
-      row('p-hide2', '副星', function (x) { return (x.hide || []).map(function (h) { return A.shiShen(c.dayMaster.gan, h); }).join(' '); }) +
-      row('p-nayin', '纳音', function (x) { return esc(x.nayin); }) +
-      row('p-cs', '长生', function (x, i) { return esc(c.changSheng[i]); });
+      row('p-cs', '星运', function (x, i) { return esc(c.dayStages[i]); }) +
+      row('p-cs', '自坐', function (x, i) { return esc(c.changSheng[i]); }) +
+      row('p-cs', '空亡', function (x) { return A.xunKong(x.gz).join(''); }) +
+      row('p-nayin', '纳音', function (x) { return esc(x.nayin); });
 
-    var colors = { '木': '#347255', '火': '#A54638', '土': '#83602C', '金': '#68635A', '水': '#3C657C' };
     var wxRows = A.WX_ORDER.map(function (k) {
       var pct = c.pct[k];
-      var col = colors[k];
-      return '<div class="wx-row"><span class="ch" style="color:' + col + '">' + k + '</span>' +
-        '<div class="bar"><i data-w="' + pct + '" style="background:' + col + '"></i></div>' +
+      return '<div class="wx-row"><span class="ch">' + Pro.element(k, k) + '</span>' +
+        '<div class="bar"><i data-w="' + pct + '"></i></div>' +
         '<span class="num">' + pct.toFixed(1) + '%</span></div>';
     }).join('');
 
@@ -277,11 +289,11 @@
     if (c.yun && c.yun.list.length) {
       var nowY = new Date().getFullYear();
       yunHtml = '<div class="section"><div class="section-hd"><span class="t">大运</span>' +
-        '<span class="a">起运 ' + c.yun.startYear + '岁' + (c.yun.startMonth ? c.yun.startMonth + '月' : '') + '</span></div>' +
+        '<span class="a">起运 ' + c.yun.startYear + '岁' + (c.yun.startMonth ? c.yun.startMonth + '月' : '') + (c.yun.startDay ? c.yun.startDay + '天' : '') + '</span></div>' +
         '<div class="yun-scroll">' + c.yun.list.map(function (y, i) {
           var cur = nowY >= y.start && nowY <= y.end;
-          return '<button class="yun ' + (i === yunIdx ? 'on' : '') + ' ' + (cur ? 'now' : '') + '" data-yun="' + i + '">' +
-            '<span class="g">' + y.gz + '</span><span class="ss">' + y.ss + '</span>' +
+          return '<button class="yun ' + (i === yunIdx ? 'on' : '') + ' ' + (cur ? 'now' : '') + '" aria-pressed="' + (i === yunIdx) + '" data-yun="' + i + '">' +
+            '<span class="g">' + Pro.ganZhi(y.gz) + '</span><span class="ss">' + y.ss + '</span>' +
             '<span class="a">' + y.start + '–' + y.end + '</span></button>';
         }).join('') + '</div>' +
         yunRelHtml + '</div>';
@@ -297,49 +309,29 @@
         '<div class="ln-grid">' + years.map(function (yy) {
           var gz = A.liunian(c, yy, yunIdx);
           if (!gz) return '';
-          return '<button class="ln ' + (yy === thisYear ? 'now' : '') + '" data-year="' + yy + '">' +
-            '<span class="y">' + yy + '</span><span class="g">' + gz.gz + '</span>' +
+          var selected = clamp(state.diagramYear || thisYear, yun.start, yun.end) === yy;
+          return '<button class="ln ' + (yy === thisYear ? 'now' : '') + (selected ? ' selected' : '') +
+            '" aria-pressed="' + selected + '" data-year="' + yy + '">' +
+            '<span class="y">' + yy + '</span><span class="g">' + Pro.ganZhi(gz.gz) + '</span>' +
             '<span class="s">' + gz.ss + '</span></button>';
         }).join('') + '</div>' +
         '<p class="tiny" style="margin-top:9px;letter-spacing:.14em">点选流年，看岁运与命局之冲合</p></div>';
     }
 
-    return '<div class="page">' + pageHeading('四柱命盘', '八字、五行与岁运') +
-      '<div class="pan-hd"><div><div class="eyebrow">' + (state.birth.gender === 'm' ? '乾造' : '坤造') + '</div>' +
-      '<div class="who">' + c.solar.y + ' · ' + pad(c.solar.m) + ' · ' + pad(c.solar.d) + ' ' + A.ZHI_LABEL[c.solar.zhi] + '时</div></div>' +
-      '<div class="when">' + esc(c.lunar.text) + '<br>' + esc(c.lunar.shengxiao) + '年 · ' + esc(c.xingzuo) + '座</div></div>' +
-
+    return '<div class="page pro-page">' + pageHeading('专业细盘', '本命四柱与岁运') +
+      Pro.scoreCard(result, c) + Pro.birthSummary(state.birth, c) +
+      '<section class="section"><div class="section-hd"><h2 class="t">四柱命盘</h2>' +
+      '<span class="a">' + c.dayMaster.gan + c.dayMaster.wx + '日主 · ' + c.strength.label + '</span></div>' +
       '<div class="card pillar-card"><div class="pillars">' + pillars + '</div></div>' +
-
-      '<div class="section"><div class="section-hd"><span class="t">五行</span><span class="a">' +
-      (c.missing.length ? '缺 ' + c.missing.join(' ') : '五行俱全') + '</span></div>' +
-      '<div class="card"><div class="wx-list">' + wxRows + '</div></div></div>' +
-
-      '<div class="section"><div class="section-hd"><span class="t">日主</span><span class="a">' + c.strength.verdict + '</span></div>' +
-      '<div class="card dm-card"><div class="dm-badge"><b>' + c.dayMaster.gan + '</b><span>' + c.dayMaster.wx + '</span></div>' +
-      '<div class="dm-body"><div class="ttl">' + c.dayMaster.gan + c.dayMaster.wx + ' <em>·</em> ' + c.strength.label + '</div>' +
-      '<p>' + esc(c.favorable.why) + '。</p>' +
-      '<div class="wx-tags"><span class="chip">喜 ' + c.favorable.use.join(' ') + '</span>' +
-      '<span class="chip bad">忌 ' + c.favorable.avoid.join(' ') + '</span></div></div></div></div>' +
-
-      '<div class="section"><div class="section-hd"><span class="t">干支关系</span>' +
-      '<span class="a">' + (c.relations.length ? c.relations.length + ' 处' : '清白') + '</span></div>' +
-      '<div class="card"><div class="rel-wrap">' + relChips(c.relations, '四柱无冲无合，气象清纯') + '</div></div></div>' +
-
-      '<div class="section"><div class="section-hd"><span class="t">神煞</span><span class="a">按日干 · 年支 · 月支取</span></div>' +
-      '<div class="card" style="padding:6px 16px"><div class="sslist">' + ssRows + '</div></div></div>' +
-
-      yunHtml + lnHtml +
-
-      '<div class="section"><div class="card" style="padding:0"><div class="klist" style="padding:4px 16px">' +
-      '<div class="krow"><span class="k">胎元</span><span class="v">' + esc(c.taiYuan) + '</span></div>' +
-      '<div class="krow"><span class="k">命宫</span><span class="v">' + esc(c.mingGong) + '</span></div>' +
-      '<div class="krow"><span class="k">旬空</span><span class="v">' + kong.join(' ') + '</span></div>' +
-      '<div class="krow"><span class="k">节气</span><span class="v">' + esc((c.jieQi && c.jieQi.prev) || '') + ' 后 · ' + esc((c.jieQi && c.jieQi.next) || '') + '</span></div>' +
-      '</div></div></div>' +
-
-      '<div style="margin-top:18px"><button class="btn ghost block" data-act="open-birth">重新排盘</button></div>' +
-      '</div>';
+      '<div class="pro-wx-legend">' + A.WX_ORDER.map(function (wx) { return Pro.element(wx, wx); }).join('') + '</div></section>' +
+      '<section class="section pro-diagram" id="chart-diagram">' + diagramFor(c) + '</section>' +
+      '<section class="section"><div class="section-hd"><h2 class="t">五行权重</h2><span class="a">' +
+      (c.missing.length ? '占比较低 · ' + c.missing.join('、') : '五行俱全') + '</span></div>' +
+      '<div class="card"><div class="wx-list">' + wxRows + '</div></div></section>' +
+      Pro.readings(result) +
+      '<section class="section"><div class="section-hd"><h2 class="t">神煞</h2><span class="a">取法及落柱</span></div>' +
+      '<div class="card" style="padding:6px 16px"><div class="sslist">' + ssRows + '</div></div></section>' +
+      yunHtml + lnHtml + '</div>';
   }
 
   /* ---------- 求签 ---------- */
@@ -421,8 +413,9 @@
   function viewMe() {
     var b = state.birth;
     var c = getChart();
-    var sub = b ? (b.y + '年' + b.m + '月' + b.d + '日 · ' + A.ZHI_LABEL[b.zhi] + '时 · ' + (b.gender === 'm' ? '男' : '女'))
-      : '尚未录入生辰';
+    var sub = b ? b.y + '年' + b.m + '月' + b.d + '日 · ' +
+      (b.city ? pad(b.hour) + ':' + pad(b.minute) + ' · ' + esc(b.city.name) : A.ZHI_LABEL[b.zhi] + '时') +
+      ' · ' + (b.gender === 'm' ? '男' : '女') : '尚未录入生辰';
     var avatar = c ? c.dayMaster.gan : (b ? A.ZHI_LABEL[b.zhi] : '命');
     var stats = c ?
       '<div class="card" style="padding:0"><div class="me-stats">' +
@@ -440,14 +433,14 @@
       '<div class="list">' +
       '<button class="list-row tap" data-act="open-birth"><span>出生信息</span><span class="v">' + (b ? '修改' : '录入') + ' <span class="arrow">›</span></span></button>' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.0 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.1 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.0</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.1</p>' +
       '</div>';
   }
 
@@ -460,6 +453,10 @@
     else if (state.tab === 'draw') html = viewDraw();
     else html = viewMe();
     v.innerHTML = html;
+    var dark = state.tab === 'chart';
+    document.body.classList.toggle('pro-chart', dark);
+    document.documentElement.classList.toggle('pro-background', dark);
+    if (window.Android && Android.setChartBars) Android.setChartBars(dark);
     paintTopDate();
     $all('.tab').forEach(function (t) {
       var active = t.dataset.tab === state.tab;
@@ -524,8 +521,8 @@
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v1.0</p>' +
-      '<p class="about-p">命盘以公历生辰换算真太阳时之节气，依子平法排出四柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
+      '<p class="about-lead">天机 · v1.1</p>' +
+      '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">所有推算均在本机完成，不联网、不上传，亦不申请任何敏感权限。</p>' +
       '<div class="divider"></div>' +
       '<div class="klist">' +
@@ -557,12 +554,12 @@
     if (!ln) return;
     var yun = c.yun.list[idx];
     var yunChips = relChips(ln.yunRel, '与流年无冲合');
-    var age = yearVal - c.solar.y + 1;
+    var age = yearVal - state.birth.y + 1;
 
     openSheet(
       '<div class="sheet-hd"><span class="t">流年 ' + yearVal + '</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
       '<div class="ln-detail">' +
-      '<div class="ln-gz"><span>' + ln.gz[0] + '</span><span>' + ln.gz[1] + '</span></div>' +
+      '<div class="ln-gz">' + Pro.ganZhi(ln.gz) + '</div>' +
       '<div class="ln-info"><div class="krow"><span class="k">十神</span><span class="v">' + ln.ss + '</span></div>' +
       '<div class="krow"><span class="k">十二长生</span><span class="v">' + ln.stage + '</span></div>' +
       '<div class="krow"><span class="k">虚岁</span><span class="v">' + age + '</span></div>' +
@@ -578,138 +575,30 @@
 
   /* 生辰录入 */
   function openBirthSheet() {
-    var b = state.birth || { y: 1995, m: 8, d: 12, zhi: 6, gender: 'm' };
-    var tmp = { y: b.y, m: b.m, d: b.d, zhi: b.zhi, gender: b.gender };
-
-    var zhiBtns = A.ZHI_LABEL.map(function (z, i) {
-      return '<button data-zhi="' + i + '" class="' + (i === tmp.zhi ? 'on' : '') + '">' +
-        '<span class="z">' + z + '时</span><span class="h">' + A.ZHI_RANGE[i] + '</span></button>';
-    }).join('');
-
-    openSheet(
-      '<div class="sheet-hd"><span class="t">录入生辰</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<div class="field"><div class="lab">公历生日</div>' +
-      '<button class="date-pick tap" data-act="open-date"><span class="v" id="dateText">' + tmp.y + ' 年 ' + tmp.m + ' 月 ' + tmp.d + ' 日</span><span class="h">选择 ›</span></button>' +
-      '</div>' +
-      '<div class="field"><div class="lab">时辰</div><div class="zhi-grid">' + zhiBtns + '</div></div>' +
-      '<div class="field"><div class="lab">性别（定大运顺逆）</div><div class="seg">' +
-      '<button data-gender="m" class="' + (tmp.gender === 'm' ? 'on' : '') + '">乾造 · 男</button>' +
-      '<button data-gender="f" class="' + (tmp.gender === 'f' ? 'on' : '') + '">坤造 · 女</button></div></div>' +
-      '<div class="sheet-actions"><button class="btn ghost" data-act="close-sheet">取消</button>' +
-      '<button class="btn" data-act="save-birth">开始排盘</button></div>',
-      function (mask) {
-        mask.addEventListener('click', function (e) {
-          var z = e.target.closest('[data-zhi]');
-          if (z) {
-            tmp.zhi = +z.dataset.zhi;
-            $all('[data-zhi]', mask).forEach(function (x) { x.classList.toggle('on', x === z); });
-          }
-          var g = e.target.closest('[data-gender]');
-          if (g) {
-            tmp.gender = g.dataset.gender;
-            $all('[data-gender]', mask).forEach(function (x) { x.classList.toggle('on', x === g); });
-          }
-          if (e.target.closest('[data-act="open-date"]')) {
-            openDateWheel(tmp, function (y, m, d) {
-              tmp.y = y; tmp.m = m; tmp.d = d;
-              var t = $('#dateText', mask);
-              if (t) t.textContent = y + ' 年 ' + m + ' 月 ' + d + ' 日';
-            });
-          }
-          if (e.target.closest('[data-act="save-birth"]')) {
-            state.birth = { y: tmp.y, m: tmp.m, d: tmp.d, zhi: tmp.zhi, gender: tmp.gender };
-            store(K_BIRTH, state.birth);
-            state.chart = null; state.daily = null; state.yunIdx = null;
-            closeSheet();
-            haptic(16);
-            render();
-          }
-        });
+    window.TianjiBirthForm.open({
+      birth: state.birth,
+      openSheet: openSheet,
+      closeSheet: closeSheet,
+      onSave: function (birth) {
+        var chart = A.chart(birth);
+        state.birth = birth;
+        state.chart = chart;
+        state.daily = null;
+        state.yunIdx = null;
+        state.diagramYear = null;
+        state.diagramTab = 'relations';
+        store(K_BIRTH, birth);
+        haptic(16);
+        if (state.tab === 'chart') {
+          render();
+          window.scrollTo(0, 0);
+        } else {
+          go('chart');
+        }
       }
-    );
+    });
   }
 
-  /* 日期滚轮 */
-  function openDateWheel(tmp, cb) {
-    var ty = tmp.y, tm = tmp.m, td = tmp.d;
-    var years = [];
-    for (var y = 1930; y <= new Date().getFullYear(); y++) years.push(y);
-
-    function daysIn(y, m) { return new Date(y, m, 0).getDate(); }
-
-    openSheet(
-      '<div class="sheet-hd"><span class="t">择日</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<div class="wheel-wrap">' +
-      '<div class="wheel" data-w="y"><div class="pad"></div>' + years.map(function (v) { return '<div class="item" data-v="' + v + '">' + v + '</div>'; }).join('') + '<div class="pad"></div></div>' +
-      '<div class="wheel" data-w="m"><div class="pad"></div>' + Array.from({ length: 12 }, function (_, i) { return i + 1; }).map(function (v) { return '<div class="item" data-v="' + v + '">' + v + '月</div>'; }).join('') + '<div class="pad"></div></div>' +
-      '<div class="wheel" data-w="d"><div class="pad"></div><div class="day-items"></div><div class="pad"></div></div>' +
-      '</div>' +
-      '<div class="sheet-actions"><button class="btn ghost" data-act="close-sheet">取消</button>' +
-      '<button class="btn" data-act="ok-date">确 定</button></div>',
-      function (mask) {
-        var wY = $('[data-w="y"]', mask), wM = $('[data-w="m"]', mask), wD = $('[data-w="d"]', mask);
-        var dayBox = $('.day-items', mask);
-
-        function buildDays() {
-          var n = daysIn(ty, tm);
-          dayBox.innerHTML = '';
-          for (var i = 1; i <= n; i++) {
-            var it = document.createElement('div');
-            it.className = 'item';
-            it.dataset.v = i;
-            it.textContent = i + '日';
-            dayBox.appendChild(it);
-          }
-          if (td > n) td = n;
-        }
-
-        function mark(wheel, val) {
-          $all('.item', wheel).forEach(function (it) { it.classList.toggle('sel', +it.dataset.v === val); });
-        }
-
-        function scrollToVal(wheel, val) {
-          var it = $('.item[data-v="' + val + '"]', wheel);
-          if (!it) return;
-          wheel.scrollTop = it.offsetTop - 77;
-        }
-
-        buildDays();
-        setTimeout(function () {
-          scrollToVal(wY, ty); scrollToVal(wM, tm); scrollToVal(wD, td);
-          mark(wY, ty); mark(wM, tm); mark(wD, td);
-        }, 30);
-
-        function onScroll(wheel, kind) {
-          var idx = Math.round(wheel.scrollTop / 44);
-          var items = $all('.item', wheel);
-          idx = clamp(idx, 0, items.length - 1);
-          var v = +items[idx].dataset.v;
-          if (kind === 'y') { ty = v; if (td > daysIn(ty, tm)) td = daysIn(ty, tm); buildDays(); }
-          if (kind === 'm') { tm = v; if (td > daysIn(ty, tm)) td = daysIn(ty, tm); buildDays(); }
-          if (kind === 'd') { td = v; }
-          mark(wheel, v);
-        }
-
-        var timers = {};
-        function bind(wheel, kind) {
-          wheel.addEventListener('scroll', function () {
-            clearTimeout(timers[kind]);
-            timers[kind] = setTimeout(function () { onScroll(wheel, kind); }, 90);
-          }, { passive: true });
-        }
-        bind(wY, 'y'); bind(wM, 'm'); bind(wD, 'd');
-
-        mask.addEventListener('click', function (e) {
-          if (e.target.closest('[data-act="ok-date"]')) {
-            cb(ty, tm, td);
-            closeSheet();
-          }
-        });
-      }
-    );
-  }
-
-  /* ---------- 求签动作 ---------- */
   function shake() {
     if (state.shaking) return;
     var d = loadDraw();
@@ -740,11 +629,38 @@
       var tab = e.target.closest('[data-tab]');
       if (tab) { go(tab.dataset.tab); return; }
 
+      var diagramBtn = e.target.closest('[data-diagram]');
+      if (diagramBtn) {
+        state.diagramTab = diagramBtn.dataset.diagram;
+        $('#chart-diagram').innerHTML = diagramFor(getChart());
+        $('[data-diagram="' + state.diagramTab + '"]').focus({ preventScroll: true });
+        return;
+      }
+
       var yunBtn = e.target.closest('[data-yun]');
-      if (yunBtn) { state.yunIdx = +yunBtn.dataset.yun; haptic(8); render(); return; }
+      if (yunBtn) {
+        var scroll = yunBtn.parentNode.scrollLeft;
+        state.yunIdx = +yunBtn.dataset.yun;
+        state.diagramYear = null;
+        haptic(8);
+        render();
+        $('.yun-scroll').scrollLeft = scroll;
+        return;
+      }
 
       var lnBtn = e.target.closest('[data-year]');
-      if (lnBtn) { haptic(8); liunianSheet(+lnBtn.dataset.year); return; }
+      if (lnBtn) {
+        state.diagramYear = +lnBtn.dataset.year;
+        $all('[data-year]').forEach(function (button) {
+          var active = button === lnBtn;
+          button.classList.toggle('selected', active);
+          button.setAttribute('aria-pressed', active);
+        });
+        $('#chart-diagram').innerHTML = diagramFor(getChart());
+        haptic(8);
+        liunianSheet(state.diagramYear);
+        return;
+      }
 
       var act = e.target.closest('[data-act]');
       if (!act) return;
