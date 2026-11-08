@@ -65,35 +65,7 @@
       });
       return locations;
     });
-    var foundUse = useLocations.filter(function (locations) { return locations.length; }).length;
     var overlap = use.filter(function (element) { return avoid.indexOf(element) >= 0; });
-    // 每对柱只计一次。三支组合覆盖其成员之间的柱对。
-    var linkedPairs = [];
-    pillars.forEach(function (first, firstIndex) {
-      pillars.slice(firstIndex + 1).forEach(function (second) {
-        var pair = first.label + second.label;
-        var linked = relations.some(function (relation) {
-          if (relation.pair) return relation.pair === pair;
-          var group = relation.text.split(' ')[0];
-          return first.zhi !== second.zhi && group.indexOf(first.zhi) >= 0 && group.indexOf(second.zhi) >= 0;
-        });
-        if (linked) linkedPairs.push(pair);
-      });
-    });
-
-    var factors = [
-      { label: '月令透干', value: Math.round(30 * shownMonth.length / month.hide.length), max: 30,
-        detail: month.zhi + '支藏干有 ' + shownMonth.length + '/' + month.hide.length + ' 见于年、月、时干'
-          + (shownMonth.length ? '（' + shownMonth.join('、') + '）' : '') + '，按比例计分。' },
-      { label: '天干见根', value: Math.round(25 * rootedStems.length / 4), max: 25,
-        detail: '四处天干中有 ' + rootedStems.length + '/4 可在地支找到同字藏干'
-          + (rootedStems.length ? '（' + rootedStems.map(function (pillar) { return pillar.label + '干' + pillar.gan; }).join('、') + '）' : '') + '，按比例计分。' },
-      { label: '取用落点', value: Math.round(25 * foundUse / use.length), max: 25,
-        detail: '参考取用的' + use.join('、') + '中，有 ' + foundUse + '/' + use.length + ' 项见于干、支或藏干，按比例计分。' },
-      { label: '跨柱关联', value: Math.round(20 * linkedPairs.length / 6), max: 20,
-        detail: '六对柱中有 ' + linkedPairs.length + '/6 对存在干支组合'
-          + (linkedPairs.length ? '（' + linkedPairs.join('、') + '）' : '') + '，各类组合等权，同一柱对只计一次。' }
-    ];
 
     var mainHidden = month.hide[0];
     var supportElement = root.Astro.WX_ORDER.find(function (element) { return PRODUCES[element] === day.wx; });
@@ -188,9 +160,28 @@
         url: SAN_MING_FIVE });
     }
 
+    var lens = {
+      身强: ['给主动推进留反馈', '选一件你想推进的事，先做一个小版本。请一位信任的人给具体反馈，再决定下一步。'],
+      身弱: ['先给任务找支点', '把本周最费力的一件事拆成一个能独立完成的小步骤，再列出一项可以求助或借用的资源。'],
+      中和: ['给计划留出余量', '本周只选一件优先事项，并给它留一点缓冲时间。周末回看哪些安排顺手，哪些需要调整。']
+    }[chart.strength.label];
     return {
-      score: factors.reduce(function (sum, factor) { return sum + factor.value; }, 0),
-      factors: factors,
+      overview: [
+        { title: '本命怎么看', text: day.gan + day.wx + '日主生于' + month.zhi + '月（' + SEASON[month.zhi] +
+          '），月支本气' + mainHidden + '为' + month.shiShenZhi[0] + '。按本盘加权口径，日主归为' + chart.strength.label + '。' },
+        { title: '哪里相助，哪里牵制', text:
+          (dayRoots.length ? '日主在' + dayRoots.join('、') + '有同字藏干。' : '日主同字在四支藏干中未见，可结合印星与同类五行看生扶。') +
+          (noteworthy.length ? '盘中可对照' + noteworthy.slice(0, 2).map(describeRelation).join('、') + '。其作用要结合所在柱位和月令。' : '') }
+      ],
+      evidence: [
+        shownMonth.length ? '月支藏干透出：' + shownMonthText + '。' : '月支藏干在年、月、时干中未见同字。',
+        rootedStems.length ? '见根天干：' + rootedStems.map(function (p) { return p.label + '干' + p.gan; }).join('、') + '。' : '四个天干在地支中均未见同字藏干。'
+      ],
+      advice: [
+        { title: lens[0], text: lens[1] },
+        clash ? { title: '先确认再回应', text: '把盘里的' + describeRelation(clash) + '当成复盘提示。沟通有分歧时，先复述对方的重点，再提出一个可以验证的下一步。' }
+          : { title: '做一次轻量复盘', text: '每周留十分钟，记下一件顺手的事和一件卡住的事，从中挑一个小调整试一周。' }
+      ],
       sections: sections,
       classics: classics
     };

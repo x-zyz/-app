@@ -65,15 +65,38 @@
       '<br>年、月柱及起运按实际出生瞬间与节气比较。日、时柱取出生地真太阳时。</p></details></section>';
   }
 
-  function scoreCard(result, chart) {
-    return '<section class="pro-score"><div class="pro-score-top"><div><p class="pro-kicker">命局评分 · 结构参考</p>' +
-      '<h2>' + result.score + '<small> / 100</small></h2></div><div class="pro-score-glyph">' +
-      element(chart.dayMaster.gan, chart.dayMaster.wx) + '<small>日主</small></div></div>' +
-      '<p>反映四柱中可对应的结构线索，供读盘参考。</p><details><summary>查看评分依据</summary><ul>' +
-      result.factors.map(function (factor) {
-        return '<li><b>' + esc(factor.label) + ' · ' + factor.value + '/' + factor.max + '</b><span>' +
-          esc(factor.detail) + '</span></li>';
+  function overview(result, chart) {
+    return '<section class="pro-score pro-overview"><p class="pro-kicker">本命四柱</p><h2>命局提要</h2>' +
+      result.overview.map(function (item) {
+        return '<article><h3>' + esc(item.title) + '</h3><p>' + esc(item.text) + '</p></article>';
+      }).join('') +
+      '<article><h3>岁运会改变什么</h3><p id="cycle-overview"></p></article>' +
+      '<article><h3>命盘五行比例</h3><div class="overview-elements">' +
+      A.WX_ORDER.map(function (wx) {
+        var pct = chart.pct[wx];
+        return '<div class="wx-' + wxClass[wx] + '">' + element(wx, wx) + '<strong>' + pct.toFixed(1) +
+          '%</strong><span class="overview-track" aria-hidden="true"><i style="width:' + pct + '%"></i></span></div>';
+      }).join('') + '</div><p class="tiny">按天干、地支与藏干加权计算。</p></article>' +
+      '<details><summary>读盘依据</summary><ul>' + result.evidence.map(function (line) {
+        return '<li>' + esc(line) + '</li>';
       }).join('') + '</ul></details></section>';
+  }
+
+  function cycleSummary(year, yun) {
+    if (!year || !yun) return '有可选岁运时，可在下方点选后查看这一时期与本命的关系。';
+    var links = year.rels.concat(year.yunRel).slice(0, 3).map(function (rel) {
+      return rel.text + (rel.pair ? '（' + rel.pair.split('').map(function (p) { return pillarNames[p]; }).join('、') + '）' : '');
+    });
+    return year.year + '年' + year.gz + ' · ' + yun.gz + '大运。' +
+      (links.length ? '可对照' + links.join('、') + '。' : '按现有规则，未见流年与本命或大运的直接配对。');
+  }
+
+  function lifestyle(result) {
+    return '<section class="section pro-reading"><div class="section-hd"><h2 class="t">生活小建议</h2></div>' +
+      '<div class="card pro-reading-list"><article><p>把盘面当作自我观察的提示，按你实际遇到的事挑一条试试。</p></article>' +
+      result.advice.map(function (item) {
+        return '<article><h3>' + esc(item.title) + '</h3><p>' + esc(item.text) + '</p></article>';
+      }).join('') + '</div></section>';
   }
 
   function readings(result) {
@@ -256,6 +279,6 @@
 
   root.TianjiProChart = {
     element: element, ganZhi: ganZhi, birthSummary: birthSummary,
-    scoreCard: scoreCard, readings: readings, diagram: diagram
+    overview: overview, cycleSummary: cycleSummary, lifestyle: lifestyle, readings: readings, diagram: diagram
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

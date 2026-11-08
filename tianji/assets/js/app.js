@@ -223,7 +223,7 @@
     var index = pickYunIndex(chart);
     var yun = chart.yun && chart.yun.list[index];
     var year = yun ? A.liunian(chart, clamp(state.diagramYear || new Date().getFullYear(), yun.start, yun.end), index) : null;
-    return Pro.diagram(chart, state.diagramTab, yun, year, state.birth.gender);
+    return { diagram: Pro.diagram(chart, state.diagramTab, yun, year, state.birth.gender), summary: Pro.cycleSummary(year, yun) };
   }
 
   function viewChart() {
@@ -261,13 +261,6 @@
       row('p-cs', '自坐', function (x, i) { return esc(c.changSheng[i]); }) +
       row('p-cs', '空亡', function (x) { return A.xunKong(x.gz).join(''); }) +
       row('p-nayin', '纳音', function (x) { return esc(x.nayin); });
-
-    var wxRows = A.WX_ORDER.map(function (k) {
-      var pct = c.pct[k];
-      return '<div class="wx-row"><span class="ch">' + Pro.element(k, k) + '</span>' +
-        '<div class="bar"><i data-w="' + pct + '"></i></div>' +
-        '<span class="num">' + pct.toFixed(1) + '%</span></div>';
-    }).join('');
 
     var ssRows = c.shenSha.length ? c.shenSha.map(function (s) {
       var tags = s.pillars.map(function (i) { return '<span class="tag-mini">' + '年月日时'[i] + '</span>'; }).join('');
@@ -319,15 +312,13 @@
     }
 
     return '<div class="page pro-page">' + pageHeading('专业细盘', '本命四柱与岁运') +
-      Pro.scoreCard(result, c) + Pro.birthSummary(state.birth, c) +
+      Pro.overview(result, c) + Pro.birthSummary(state.birth, c) +
       '<section class="section"><div class="section-hd"><h2 class="t">四柱命盘</h2>' +
       '<span class="a">' + c.dayMaster.gan + c.dayMaster.wx + '日主 · ' + c.strength.label + '</span></div>' +
       '<div class="card pillar-card"><div class="pillars">' + pillars + '</div></div>' +
       '<div class="pro-wx-legend">' + A.WX_ORDER.map(function (wx) { return Pro.element(wx, wx); }).join('') + '</div></section>' +
-      '<section class="section pro-diagram" id="chart-diagram">' + diagramFor(c) + '</section>' +
-      '<section class="section"><div class="section-hd"><h2 class="t">五行权重</h2><span class="a">' +
-      (c.missing.length ? '占比较低 · ' + c.missing.join('、') : '五行俱全') + '</span></div>' +
-      '<div class="card"><div class="wx-list">' + wxRows + '</div></div></section>' +
+      '<section class="section pro-diagram" id="chart-diagram"></section>' +
+      Pro.lifestyle(result) +
       Pro.readings(result) +
       '<section class="section"><div class="section-hd"><h2 class="t">神煞</h2><span class="a">取法及落柱</span></div>' +
       '<div class="card" style="padding:6px 16px"><div class="sslist">' + ssRows + '</div></div></section>' +
@@ -433,18 +424,26 @@
       '<div class="list">' +
       '<button class="list-row tap" data-act="open-birth"><span>出生信息</span><span class="v">' + (b ? '修改' : '录入') + ' <span class="arrow">›</span></span></button>' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.1 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.2 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.1</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.2</p>' +
       '</div>';
   }
 
   /* ---------- 渲染 ---------- */
+  function refreshDiagram() {
+    var area = $('#chart-diagram');
+    if (!area) return;
+    var view = diagramFor(getChart());
+    area.innerHTML = view.diagram;
+    $('#cycle-overview').textContent = view.summary;
+  }
+
   function render() {
     var v = $('#view');
     var html = '';
@@ -453,6 +452,7 @@
     else if (state.tab === 'draw') html = viewDraw();
     else html = viewMe();
     v.innerHTML = html;
+    refreshDiagram();
     var dark = state.tab === 'chart';
     document.body.classList.toggle('pro-chart', dark);
     document.documentElement.classList.toggle('pro-background', dark);
@@ -472,11 +472,6 @@
       var v = +el.dataset.v;
       el.style.width = '0%';
       setTimeout(function () { el.style.width = v + '%'; }, 60);
-    });
-    $all('.wx-row .bar i').forEach(function (el) {
-      var w = +el.dataset.w;
-      el.style.width = '0%';
-      setTimeout(function () { el.style.width = Math.min(100, w) + '%'; }, 80);
     });
     var d = state.tab === 'home' ? getDaily() : null;
     if (!d) return;
@@ -521,7 +516,7 @@
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v1.1</p>' +
+      '<p class="about-lead">天机 · v1.2</p>' +
       '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">所有推算均在本机完成，不联网、不上传，亦不申请任何敏感权限。</p>' +
       '<div class="divider"></div>' +
@@ -632,7 +627,7 @@
       var diagramBtn = e.target.closest('[data-diagram]');
       if (diagramBtn) {
         state.diagramTab = diagramBtn.dataset.diagram;
-        $('#chart-diagram').innerHTML = diagramFor(getChart());
+        refreshDiagram();
         $('[data-diagram="' + state.diagramTab + '"]').focus({ preventScroll: true });
         return;
       }
@@ -656,7 +651,7 @@
           button.classList.toggle('selected', active);
           button.setAttribute('aria-pressed', active);
         });
-        $('#chart-diagram').innerHTML = diagramFor(getChart());
+        refreshDiagram();
         haptic(8);
         liunianSheet(state.diagramYear);
         return;

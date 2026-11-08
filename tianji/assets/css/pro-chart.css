@@ -170,3 +170,14 @@ body.pro-chart {
   .pro-page .pillar-card { padding-inline: 4px; }
   .diagram-node { width: 24px; height: 24px; font-size: 12px; }
 }
+
+
+.pro-overview h2 { font-size: 26px; margin: 6px 0 12px; }
+.pro-overview article { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
+.pro-overview h3 { font-size: 14px; color: var(--gold-hi); }
+.pro-overview article p { margin-top: 4px; font-size: 13px; color: var(--text-2); line-height: 1.65; }
+.overview-elements { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 6px; margin: 8px 0; }
+.overview-elements div { display: grid; gap: 4px; min-width: 0; font-size: 12px; }
+.overview-elements strong { font-size: 12px; }
+.overview-track { background: var(--line); height: 4px; border-radius: 4px; overflow: hidden; }
+.overview-track i { display: block; height: 100%; background: var(--wx); }
