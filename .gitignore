@@ -1,0 +1,5 @@
+/tianji/build/
+/tools/android-sdk/
+*.keystore
+*.jks
+*.idsig
