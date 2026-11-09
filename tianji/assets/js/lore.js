@@ -91,7 +91,18 @@
       (buttons || '<span class="tiny">按本版取法，这一组无命中。</span>') + '</div></section>';
   }
 
-  function detail(chart, name, scope, cycle, hits) {
+  function pillarStars(hits, index) {
+    var seen = new Set();
+    var buttons = hits.map(function (hit, i) {
+      if (!hit.pillars.includes(index) || seen.has(hit.name)) return '';
+      seen.add(hit.name);
+      return '<button class="pillar-star" data-star="' + i + '" data-scope="natal" data-star-pillar="' +
+        index + '" aria-label="' + '年月日时'[index] + '柱神煞 ' + esc(hit.name) + '">' + esc(hit.name) + '</button>';
+    }).join('');
+    return '<div class="pillar-star-list">' + (buttons || '<span class="pillar-star-empty" aria-label="无神煞命中">—</span>') + '</div>';
+  }
+
+  function detail(chart, name, scope, cycle, hits, pillarIndex) {
     var natal = chart.pillars;
     var all = natal.slice();
     if (cycle) all.push({ label: scope === 'yun' ? '运' : '流', gan: cycle.gz[0], zhi: cycle.gz[1], gz: cycle.gz });
@@ -99,6 +110,7 @@
     var matched = hits.filter(function (hit) { return hit.name === name; });
     var locations = Array.from(new Set(matched.flatMap(function (hit) { return hit.pillars; })));
     if (cycle) locations = [4];
+    else if (Number.isInteger(pillarIndex)) locations = locations.filter(function (i) { return i === pillarIndex; });
     var natalHits = Array.from(new Set(chart.shenSha.filter(function (hit) {
       return hit.name === name;
     }).flatMap(function (hit) { return hit.pillars; })));
@@ -133,5 +145,5 @@
       '<p class="tiny">神煞按本命起查，作为读盘辅助，结合月令、十神与干支关系理解。</p>';
   }
 
-  window.TianjiLore = { reader:reader, section:section, read:read, group:group, detail:detail };
+  window.TianjiLore = { reader:reader, section:section, read:read, group:group, pillarStars:pillarStars, detail:detail };
 }());
