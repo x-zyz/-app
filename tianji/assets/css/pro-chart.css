@@ -273,3 +273,8 @@ body.pro-chart {
 .pro-page .p-row > .p-hide { align-items: flex-start; }
 .pillar-stack { display: grid; align-content: start; gap: 4px; min-width: 0; line-height: 1.5; font-size: 13px; }
 .pillar-stack span { white-space: nowrap; }
+
+.pillar-term {
+  width: 100%; min-height: 44px; font-size: 12px; color: var(--gold-hi);
+  text-decoration: underline dotted; text-underline-offset: 3px;
+}

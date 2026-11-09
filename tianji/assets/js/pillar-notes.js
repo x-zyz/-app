@@ -36,6 +36,34 @@
     return '<button class="pillar-explain" data-pillar-note="' + type + '" data-pillar-index="' + i +
       '" aria-label="' + c.pillars[i].label + '柱' + labels[type] + ' ' + esc(text) + '">' + esc(text) + '</button>';
   }
+  var glossary = {
+    stage: ['星运是本盘各柱地支相对于日主所处的十二长生阶段。',
+      '先找日干，再用这个日干分别查年、月、日、时的地支。同一个日干贯穿四列。',
+      '例如日干是甲、月支是亥，月柱星运就是长生。'],
+    seat: ['自坐是某一柱的天干相对于自己地支所处的十二长生阶段。',
+      '逐柱拿本柱天干查本柱地支。日柱的星运和自坐用的是同一个日干，所以日柱两项相同。',
+      '例如月柱是乙亥，自坐用乙查亥，为死。若日干是甲，月柱星运则用甲查亥，为长生。这里的「死」是阶段名。'],
+    void: ['空亡也叫旬空。六十甲子分六旬，每旬十组干支，有两个地支在这一旬里没有配到天干。',
+      '表格逐柱按该柱干支查出两个空支。神煞行则另以日柱的空支，查哪些本命地支命中。',
+      '例如甲子旬从甲子排到癸酉，剩下戌、亥，所以甲子旬空戌亥。'],
+    tone: ['纳音是六十甲子的一套传统五行分类。每相邻两组干支共用一个名称。',
+      '按整组干支查纳音表。命盘五行比例则按天干、地支和藏干加权。',
+      '例如戊午、己未同属天上火，即使己是土、未也是土，己未的纳音仍叫天上火。']
+  };
+
+  function label(type) {
+    return '<button class="pillar-term" data-pillar-term="' + type + '" aria-label="查看' +
+      labels[type] + '词条">' + labels[type] + '</button>';
+  }
+
+  function termDetail(type) {
+    var text = glossary[type], lore = window.TianjiLore;
+    return '<div class="sheet-hd"><span class="t">' + labels[type] +
+      '</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
+      '<div class="explain-body">' + lore.section('是什么意思', text[0]) + lore.section('怎么查', text[1]) +
+      lore.section('举个例子', text[2]) + '<p class="tiny">点这一行右侧各柱的数值，可看本盘的具体解释。</p></div>';
+  }
+
   function detail(c, i, type) {
     var p = c.pillars[i], text = value(c, i, type), body;
     if (type === 'stage' || type === 'seat') {
@@ -117,5 +145,5 @@
       '<details><summary>展开对应条文</summary><p>' + esc(exact || entry.intro) + '</p></details>' +
       '<p class="tiny">古籍条文使用当时的术语与社会背景，原有论断可作为传统文本来读。</p></article>';
   }
-  window.TianjiPillarNotes = {cell:cell,detail:detail,caseReading:caseReading};
+  window.TianjiPillarNotes = {cell:cell,detail:detail,label:label,termDetail:termDetail,caseReading:caseReading};
 }());
