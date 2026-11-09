@@ -1,5 +1,5 @@
 /* 天机 · 本命结构解读
- * 解释 Astro.chart 的输出，古籍摘录仅用于说明传统读盘术语。
+ * 解释 Astro.chart 的输出。
  */
 (function (root) {
   'use strict';
@@ -8,14 +8,6 @@
     申: '孟秋', 酉: '仲秋', 戌: '季秋', 亥: '孟冬', 子: '仲冬', 丑: '季冬' };
   var PRODUCES = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
   var CONTROLS = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
-  var DI_TIAN_SUI = 'https://zh.wikisource.org/zh-hant/滴天髓闡微';
-  var SAN_MING = 'https://zh.wikisource.org/zh-hant/三命通會/卷二';
-  var STEM_LINES = {
-    甲: '甲木參天', 乙: '乙木雖柔', 丙: '丙火猛烈', 丁: '丁火柔中', 戊: '戊土固重',
-    己: '己土卑濕', 庚: '庚金帶煞', 辛: '辛金軟弱', 壬: '壬水通河', 癸: '癸水至弱'
-  };
-  var SAN_MING_FIVE = 'https://zh.wikisource.org/zh-hant/三命通會_(四庫全書本)/卷05';
-
   function describeRelation(relation) {
     return relation.text.replace(/\s+/g, '') + (relation.pair ? '（' + relation.pair.split('').join('、') + '柱）' : '');
   }
@@ -114,52 +106,6 @@
       { title: '四柱组合', text: relationText }
     ];
 
-    var earthInColdSeason = day.gan === '戊' && '申酉戌亥子丑'.includes(month.zhi);
-    var classics = [{
-      title: '滴天髓阐微',
-      section: earthInColdSeason ? '通神论 · 天干 · 戊土任注' : '通神论 · 天干 · ' + day.gan,
-      quote: earthInColdSeason ? '生於秋冬，水多宜火暖之' : STEM_LINES[day.gan],
-      reason: earthInColdSeason ?
-        '本盘为戊土日主，生于' + month.zhi + '月（' + SEASON[month.zhi] + '）。盘中水约占' +
-        chart.pct['水'] + '%，火约占' + chart.pct['火'] + '%。古籍这句带有水多的条件，可与本盘火水分布对读。' :
-        '本盘日干为' + day.gan + '，对应本篇同一日干的段落。' + day.wx +
-        '在本盘加权约占' + chart.pct[day.wx] + '%，月令为' + month.zhi + '（' + SEASON[month.zhi] + '）。',
-      url: DI_TIAN_SUI + '#七、天干'
-    }, {
-      title: '滴天髓阐微', section: '通神论 · 月令', quote: '月令乃提綱之府',
-      reason: '本盘从' + month.zhi + '月（' + SEASON[month.zhi] + '）入手，再看月支本气' + mainHidden + '和全盘的生扶比例。',
-      url: DI_TIAN_SUI + '#十五、月令'
-    }];
-    var middle = chart.strength.label === '中和';
-    classics.push({
-      title: '滴天髓阐微', section: middle ? '通神论 · 中和' : '通神论 · 衰旺原注',
-      quote: middle ? '既識中和之正理' : chart.strength.label === '身强' ? '旺則宜泄宜傷' : '衰則喜幫喜助',
-      reason: '本盘生扶约占' + supportPct + '%，读作' + chart.strength.label + '。这段文字对应取用时所观察的'
-        + (middle ? '相对均衡' : chart.strength.label === '身强' ? '泄耗与制衡' : '生扶') + '。',
-      url: DI_TIAN_SUI + (middle ? '#十八、中和' : '#十七、衰旺')
-    });
-
-    var triple = relations.find(function (relation) { return relation.kind === '三合'; });
-    var branchClash = relations.find(function (relation) { return relation.kind === '冲'; });
-    var branchUnion = relations.find(function (relation) { return relation.kind === '合'; });
-    if (triple) {
-      classics.push({ title: '三命通会', section: '卷二 · 论支元三合', quote: '若三字缺一則化不成局',
-        reason: '本盘见' + describeRelation(triple) + '，三支齐备，对应书中核对三字的条件。成局后的五行变化另有细则。',
-        url: SAN_MING + '#論支元三合' });
-    } else if (branchClash) {
-      classics.push({ title: '三命通会', section: '卷二 · 论冲击', quote: '地支取七位為沖',
-        reason: '本盘见' + describeRelation(branchClash) + '，两支按地支顺序从起支数到第七位，对应相冲的排法。',
-        url: SAN_MING + '#論衝擊' });
-    } else if (branchUnion) {
-      classics.push({ title: '三命通会', section: '卷二 · 论支元六合', quote: '夫合者，和也',
-        reason: '本盘见' + describeRelation(branchUnion) + '，对应本篇所列的地支六合配对。',
-        url: SAN_MING + '#論支元六合' });
-    } else {
-      classics.push({ title: '三命通会', section: '四库本卷五 · 论古人立印食官财名义', quote: '今指甲乙為例以日干論',
-        reason: '书中以甲乙为例说明以日干为参照的读法。本盘以' + day.gan + '为参照，排出' + stemText + '。',
-        url: SAN_MING_FIVE });
-    }
-
     var lens = {
       身强: ['给主动推进留反馈', '选一件你想推进的事，先做一个小版本。请一位信任的人给具体反馈，再决定下一步。'],
       身弱: ['先给任务找支点', '把本周最费力的一件事拆成一个能独立完成的小步骤，再列出一项可以求助或借用的资源。'],
@@ -182,8 +128,7 @@
         clash ? { title: '先确认再回应', text: '把盘里的' + describeRelation(clash) + '当成复盘提示。沟通有分歧时，先复述对方的重点，再提出一个可以验证的下一步。' }
           : { title: '做一次轻量复盘', text: '每周留十分钟，记下一件顺手的事和一件卡住的事，从中挑一个小调整试一周。' }
       ],
-      sections: sections,
-      classics: classics
+      sections: sections
     };
   }
 

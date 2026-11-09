@@ -23,30 +23,91 @@
   var balance = ['神峰通考','张楠叙','日為身主，月為巢穴，歲與時為門戶，得於此而不遺於彼，通於上而不遺於下，抑有餘，補不足。',
     '日干作为参照，月令提供季节背景，年、时也应纳入全盘。文中的抑补强调结合各柱看偏盛和不足。',
     'https://zh.wikisource.org/zh-hant/神峰通考'];
-  function stem(gan) {
-    var entry = stems[gan];
-    return ['滴天髓','天干论 · ' + gan,entry[0],entry[1],stemSource];
+  var books = [];
+  var index = Object.create(null);
+
+  function book(id, title, author, edition, coverage) {
+    var item = {id:id, title:title, author:author, edition:edition, coverage:coverage, chapters:[]};
+    books.push(item);
+    return item;
   }
-  function entry(item, context) {
-    var lore = window.TianjiLore;
-    return '<article class="classic-case">' + (context ? lore.section('本盘对照', context) : '') +
-      lore.reader('《' + item[0] + '》· ' + item[1], item[2], item[3]) +
-      '<p class="tiny pro-source">底本：' + item[4] + '</p></article>';
+
+  function chapter(book, key, volume, title, source, rows) {
+    var item = {id:key, book:book, volume:volume, title:title, source:source, paragraphs:[]};
+    book.chapters.push(item);
+    rows.forEach(function (row) {
+      var id = book.id + '/' + key + '/' + row[0];
+      var paragraph = {id:id, title:row[1], text:row[2], note:row[3], chapter:item};
+      if (index[id]) throw new Error('Duplicate classic paragraph: ' + id);
+      index[id] = paragraph;
+      item.paragraphs.push(paragraph);
+    });
   }
-  function shelf() {
-    return [month, tone, balance, stem('甲')].map(function (item) {
-      var content = item[0] === '滴天髓' ? Object.keys(stems).map(function (gan) {
-        return entry(stem(gan));
-      }).join('') : entry(item);
-      return '<details><summary>《' + item[0] + '》</summary>' + content + '</details>';
-    }).join('');
+
+  var sanming = book('sanming','三命通会','万民英','维基文库本及四库全书本','卷二、卷五节录及卷八、卷九已收录的日时条文');
+  var commentary = book('ditian-commentary','滴天髓阐微','','维基文库本，含任氏注','已收录的天干、月令、衰旺、中和四篇');
+  var ditian = book('ditian','滴天髓','','维基文库《滴天髓辑要》','天干论十干选读');
+  var ziping = book('ziping','子平真诠','沈孝瞻','民国刊本影印','卷二〈论用神〉节录');
+  var wuxing = book('wuxing','五行精纪','廖中','维基文库本','卷一〈论六甲纳音法〉节录');
+  var shenfeng = book('shenfeng','神峰通考','张楠','维基文库本','张楠叙节录');
+  var qiongtong = book('qiongtong','穷通宝鉴','','维基文库本','〈论戊土〉之〈三冬戊土〉');
+
+  var sections = {
+    天干:[commentary,'通神论','天干','#七、天干'],
+    月令:[commentary,'通神论','月令','#十五、月令'],
+    衰旺:[commentary,'通神论','衰旺','#十七、衰旺'],
+    中和:[commentary,'通神论','中和','#十八、中和'],
+    六合:[sanming,'卷二','论支元六合','#論支元六合'],
+    三合:[sanming,'卷二','论支元三合','#論支元三合'],
+    冲击:[sanming,'卷二','论冲击','#論衝擊'],
+    十神:[sanming,'四库本卷五','论古人立印食官财名义（含后续条文）','']
+  };
+  Object.keys(window.TianjiClassicTexts).forEach(function (key) {
+    var section = sections[key];
+    var source = section[0] === commentary ? '滴天髓闡微' :
+      key === '十神' ? '三命通會_(四庫全書本)/卷05' : '三命通會/卷二';
+    chapter(section[0], 'source-' + key, section[1], section[2],
+      'https://zh.wikisource.org/zh-hant/' + source + section[3],
+      window.TianjiClassicTexts[key].map(function (text, i) { return [i + 1, '', text]; }));
+  });
+
+  Object.keys(window.TianjiClassicCases).forEach(function (key) {
+    var record = window.TianjiClassicCases[key];
+    chapter(sanming, 'time-' + key, '卷' + record.volume, record.title,
+      'https://zh.wikisource.org/zh-hant/三命通會/卷' + record.volume + '#' + record.title,
+      [['intro','篇首',record.intro]].concat(Object.keys(record.rows).map(function (day) {
+        return [day, day + '日', record.rows[day]];
+      })));
+  });
+
+  chapter(ditian, 'stems', '滴天髓辑要', '天干论', stemSource,
+    Object.keys(stems).map(function (gan) { return [gan, gan + '干', stems[gan][0], stems[gan][1]]; }));
+  chapter(ziping, 'method', '卷二', '论用神', month[4], [['1','',month[2],month[3]]]);
+  chapter(wuxing, 'tone', '卷一', '论六甲纳音法', tone[4], [['1','',tone[2],tone[3]]]);
+  chapter(shenfeng, 'preface', '', '张楠叙', balance[4], [['1','',balance[2],balance[3]]]);
+  chapter(qiongtong, 'winter-wu', '论戊土', '三冬戊土',
+    'https://zh.wikisource.org/wiki/穷通宝鉴#三冬戊土', [
+      ['1','','十月戊土，时值小阳，阳气略出，先用甲木，次取丙火。非甲、土不灵。非丙、土不暖，安能生发万物。甲丙两出，富贵中人。或甲得长生，遇支藏得地之水，一丙高透，亦主身贵扬名。'],
+      ['2','','支见庚金，入泮而已。若不见庚金，甲木藏支，丙火高透，科甲有之。若有庚，丁出制，必异路功名。或为典吏。即庚丁不透，甲丙藏支，亦云富贵。'],
+      ['3','','壬透得戊救丙，主富贵取贵。丙甲俱无，必为僧道。'],
+      ['4','例盘','时日月年 戊戊癸癸 午辰亥卯  | 时日月年 庚戊辛壬 甲寅亥申  | 时日月年 丙戊丁乙 辰戌亥卯'],
+      ['5','','十一二月严寒冰冻，丙火为专，甲木为佐。丙甲两透，桃浪之人，丙出甲藏，采芹食饩。丙藏甲出，佐杂前程。有丙无甲者，豪富。有甲无丙者，清贫。丙甲全无，下流之造。'],
+      ['6','','或一派丙火，加以丙透，运值火土，弱中复强，又一壬透，主清高荣禄。乏壬、僧道孤寒。'],
+      ['7','','或一派壬水，不见比劫，可作从才而论。即有比劫，得甲出干，又主富贵，若寒土无丙，虽有甲木，亦是内虚外实之人。'],
+      ['8','','或二癸透月时，名为争合，终属劳碌之人。得一己出干制癸，反为忠义之士，舍己从人而论。'],
+      ['9','','年月透辛金者，又属土金伤官，异路功名可许。以金为妻、水为子。'],
+      ['10','例盘','时日月年 壬戊壬壬 子子子子  | 时日月年 癸戊乙癸 丑申丑卯  | 时日月年 戊戊甲戊 午辰子寅']
+    ]);
+
+  function search(query, bookId) {
+    var key = String(query).trim().toLowerCase();
+    if (!key) return [];
+    return Object.values(index).filter(function (p) {
+      return (!bookId || p.chapter.book.id === bookId) &&
+        [p.chapter.book.title, p.chapter.volume, p.chapter.title, p.title, p.text].some(function (value) {
+          return value.toLowerCase().includes(key);
+        });
+    });
   }
-  function forChart(chart) {
-    var day = chart.pillars[2], monthly = chart.pillars[1];
-    return entry(stem(day.gan), '你的日主是' + day.gan + '，月柱为' + monthly.gz + '，对应《滴天髓》的' + day.gan + '干条。') +
-      entry(month, '日干' + day.gan + '，月令' + monthly.zhi + '；月支藏干为' + monthly.hide.join('、') + '。') +
-      entry(tone, '本盘四柱纳音依次为' + chart.pillars.map(function (pillar) { return pillar.nayin; }).join('、') + '。') +
-      entry(balance, '以' + day.gz + '日柱为身主，结合' + monthly.gz + '月柱、' + chart.pillars[0].gz + '年柱和' + chart.pillars[3].gz + '时柱看配合。');
-  }
-  window.TianjiClassicLibrary = {shelf:shelf, forChart:forChart};
+  window.TianjiClassicLibrary = {books:books, paragraph:function (id) { return index[id]; }, search:search};
 }());

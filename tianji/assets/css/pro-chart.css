@@ -334,3 +334,38 @@ body::before {
 .useful-elements h3 small { color: var(--text-3); font-size: 11px; font-weight: normal; }
 .useful-elements p { margin-top: 5px; line-height: 1.65; color: var(--text-2); font-size: 13px; }
 .pillar-star, .ln-column-stars .pillar-star { min-height: 44px; }
+
+/* Shared offline classic reader */
+.classic-shelf { display: grid; gap: 8px; margin-top: 10px; }
+.classic-shelf article, .classic-results article { padding: 12px 0; border-top: 1px solid var(--line); }
+.classic-shelf h3, .classic-content h2 { font-size: 1.15rem; }
+.classic-shelf p { margin: 4px 0; color: var(--text-2); }
+.classic-shelf .btn { margin-top: 6px; }
+.classic-link, .classic-bookmark {
+  display: inline-flex; align-items: center; min-height: 44px; text-align: left;
+  color: var(--gold-hi); text-decoration: underline; text-underline-offset: 3px;
+}
+.classic-references { padding: 12px 14px; }
+.classic-references summary, .classic-content summary { min-height: 44px; padding-block: 9px; cursor: pointer; }
+.classic-reader { --classic-font: 18px; padding-top: 0; }
+.classic-reader-head { position: sticky; z-index: 2; top: 0; background: var(--ink-2); padding-block: 12px 8px; }
+.classic-reader-head .sheet-hd { margin-bottom: 6px; }
+.classic-tools { display: flex; flex-wrap: wrap; gap: 5px 10px; }
+.classic-tools .btn { min-width: 44px; min-height: 44px; padding-inline: 9px; font-size: .875rem; }
+.classic-tools button:disabled { opacity: .55; }
+.classic-content { line-height: 1.65; }
+.classic-content h2 { margin: 10px 0; }
+.classic-content h3 { margin: 6px 0; font-size: 1rem; }
+.classic-paragraph { padding: 12px 0; border-top: 1px solid var(--line); }
+.classic-original {
+  font: var(--classic-font)/1.85 var(--serif); overflow-wrap: anywhere;
+  user-select: text; -webkit-user-select: text; white-space: pre-wrap;
+}
+.classic-content mark { background: var(--gold-hi); color: var(--ink); border-radius: 3px; }
+.classic-source { margin: 14px 0; color: var(--text-3); overflow-wrap: anywhere; font-size: .8rem; }
+.classic-search { display: grid; gap: 8px; margin: 8px 0 12px; }
+.classic-search label { display: grid; gap: 4px; }
+.classic-search input, .classic-search select {
+  width: 100%; min-height: 44px; border: 1px solid var(--gold-line); border-radius: 8px;
+  background: var(--ink); color: var(--text); padding-inline: 10px; font: inherit;
+}

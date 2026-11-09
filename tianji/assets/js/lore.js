@@ -9,17 +9,6 @@
     return mode !== 'common' || Stars.byId(hit.id).common;
   }
 
-  var notes = {
-    天干:'古书依日干的阴阳五行分别说明其性质。读具体命盘时，还要看这个日干生于何月、四柱如何生扶或制约。',
-    月令:'月令像一座房屋的总纲。月支藏干中当令的气，就像决定房屋朝向的因素，应先辨清它。',
-    中和:'先理解怎样才叫适中，再观察这张盘的气势和取用。',
-    衰旺:'日主偏旺时，古法考虑用泄耗或克制来疏导。偏弱时考虑生扶。原注随后说明，旺弱走到极端时另有取法。',
-    六合:'合指两支相配。六合是子丑、寅亥、卯戌、辰酉、巳申、午未六组。',
-    三合:'以申子辰为例，申是水的生地，子是旺地，辰是库地。三个字齐备才具备讨论完整三合局的条件。',
-    冲击:'从一个地支顺着十二地支数，起点也计入，第七个地支与它相冲，如子午、卯酉。',
-    十神:'作者用甲乙为例，说明应以出生日的天干为参照，解释其他干支与日主之间的关系。'
-  };
-
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
@@ -41,19 +30,6 @@
           (i === 2 ? ' checked' : '') + '><label for="' + id + '-' + i + '">' + label + '</label>';
       }).join('') + '<div class="reading-panels"><div class="reading-original">' + section('原文', original) +
       '</div><div class="reading-translation">' + section('今译', translation) + '</div></div></fieldset>';
-  }
-
-  function read(source) {
-    var key = Object.keys(notes).find(function (name) { return source.section.includes(name); }) || '十神';
-    var paragraphs = window.TianjiClassicTexts[key] || [];
-    var matching = paragraphs.find(function (p) { return p.includes(source.quote); });
-    var translation = source.quote.includes('水多宜火') ? '戊土生在秋冬，若命盘水气多，古法考虑用火温暖湿冷的土。' : notes[key];
-    return reader(source.title + ' · ' + source.section, source.quote, translation) +
-      (matching ? '<details><summary>查看原文上下文</summary><p>' + esc(matching) + '</p></details>' : '') +
-      '<details><summary>离线阅读本篇原文</summary><div class="lore-original">' +
-      paragraphs.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') +
-      '</div><p class="pro-source">底本：维基文库 · ' + esc(source.title + ' · ' + source.section) + '<br>' +
-      esc(source.url) + '</p></details>';
   }
 
   function group(title, subtitle, hits, scope, year, mode) {
@@ -139,5 +115,5 @@
       '<details><summary>查看来源地址</summary><p class="pro-source">' + esc(rule.source) + '</p></details>';
   }
 
-  window.TianjiLore = { reader:reader, section:section, read:read, group:group, yearColumn:yearColumn, pillarStars:pillarStars, detail:detail };
+  window.TianjiLore = { reader:reader, section:section, group:group, yearColumn:yearColumn, pillarStars:pillarStars, detail:detail };
 }());

@@ -1,4 +1,4 @@
-/* 日时条文与四柱格子解读 */
+/* 四柱格子解读 */
 (function () {
   'use strict';
   var A = window.Astro;
@@ -21,7 +21,6 @@
     天上火:'日光等高悬的火象', 石榴木:'石榴一类的树木', 大海水:'汇聚百川的海水'
   };
   var labels = { stage:'星运', seat:'自坐', void:'空亡', tone:'纳音' };
-  var seasons = {寅:'春',卯:'春',辰:'春',巳:'夏',午:'夏',未:'夏',申:'秋',酉:'秋',戌:'秋',亥:'冬',子:'冬',丑:'冬'};
   function esc(value) {
     return String(value || '').replace(/[&<>"]/g, function (c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
@@ -100,50 +99,5 @@
       lore.section('查法与解释', body) + original + '</div>';
   }
 
-  function seasonalReading(c) {
-    var day = c.pillars[2], month = c.pillars[1];
-    if (day.gan !== '戊' || month.zhi !== '亥') return '';
-    function placement(gan) {
-      var exposed = c.pillars.filter(function (p) { return p.gan === gan; }).map(function (p) { return p.label + '干'; });
-      var hidden = c.pillars.filter(function (p) { return p.hide.includes(gan); }).map(function (p) { return p.label + '支' + p.zhi; });
-      return gan + '：' + (exposed.length ? '透于' + exposed.join('、') : '未透干') +
-        (hidden.length ? '，藏于' + hidden.join('、') : '，四支未藏');
-    }
-    var lore = window.TianjiLore;
-    return '<article class="classic-case"><h3>论戊生亥月</h3>' +
-      lore.section('本盘对照', '戊日主、亥月，匹配本条。' + placement('甲') + '；' + placement('丙') + '。') +
-      lore.reader('《穷通宝鉴》· 三冬戊土',
-        '十月戊土，时值小阳，阳气略出，先用甲木，次取丙火。非甲、土不灵。非丙、土不暖，安能生发万物。',
-        '戊土生在亥月，古书先看甲木能否疏土，再看丙火能否暖土。盘里出现甲或丙，还要区分它是露在天干，还是藏在地支。') + '</article>';
-  }
-
-  function caseReading(c) {
-    var day = c.pillars[2], hour = c.pillars[3], month = c.pillars[1];
-    var entry = window.TianjiClassicCases[day.gan + hour.gz];
-    if (!entry) return '';
-    var exact = entry.rows[day.gz];
-    var lines = (exact || entry.intro).match(/[^。！？]+[。！？]?/g) || [];
-    // Only positively stated, leading month/season clauses qualify as candidates.
-    var seasonal = lines.filter(function (line) {
-      var part = line.replace(/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]日[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]時，/, '');
-      var m = part.match(/^(?:若|如|生於)?([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]|[子丑寅卯辰巳午未申酉戌亥]+)月[，、：；]/);
-      var season = part.match(/^([春夏秋冬]+)[，、：；]/);
-      return (m && (m[1] === month.gz || m[1].includes(month.zhi) && !/^[甲乙丙丁戊己庚辛壬癸]/.test(m[1]))) ||
-        (season && season[1].includes(seasons[month.zhi]));
-    });
-    var quote = seasonal[0] || lines.slice(0, 2).join('');
-    var translated = quote.replace(/富貴|大貴|貴顯/g, '富足或显达').replace(/行北運/g, '行偏北方水气的大运')
-      .replace(/身旺/g, '日主有力').replace(/身弱/g, '日主偏弱').replace(/印綬/g, '印星')
-      .replace(/歲運/g, '大运与流年').replace(/時/g, '时').replace(/貴/g, '显达').replace(/無/g,'无');
-    var note = '本盘为' + day.gz + '日、' + hour.gz + '时，月柱' + month.gz + '（' + seasons[month.zhi] + '季）。' +
-      (exact ? '原文有相同日柱与时柱的分条。' : '当前底本匹配到同日干、同时柱的总论。') +
-      (seasonal.length ? '引文中的月令或季节与本盘相符。句中若另提年柱、组合或行运，还需逐项核对。' :
-      '本条仍须连同原文中的年月、干支及行运条件阅读。');
-    return seasonalReading(c) + '<article class="classic-case"><h3>三命通会 <small>卷' + entry.volume + ' · ' + esc(entry.title) +
-      '</small></h3><p>' + esc(note) + '</p>' +
-      window.TianjiLore.reader('对应引文', quote, translated !== quote ? translated : '') +
-      '<details><summary>展开对应条文</summary><p>' + esc(exact || entry.intro) + '</p></details>' +
-      '<p class="tiny">古籍条文使用当时的术语与社会背景，原有论断可作为传统文本来读。</p></article>';
-  }
-  window.TianjiPillarNotes = {cell:cell,detail:detail,label:label,termDetail:termDetail,caseReading:caseReading};
+  window.TianjiPillarNotes = {cell:cell,detail:detail,label:label,termDetail:termDetail};
 }());

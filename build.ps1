@@ -29,8 +29,8 @@ Step 'aapt2 link'
     --manifest "$src\AndroidManifest.xml" `
     --min-sdk-version 24 `
     --target-sdk-version 35 `
-    --version-code 23 `
-    --version-name 3.2 `
+    --version-code 24 `
+    --version-name 3.3 `
     --auto-add-overlay `
     "$out\res.zip"
 if ($LASTEXITCODE -ne 0) { throw 'aapt2 link failed' }
