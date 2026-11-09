@@ -283,3 +283,12 @@ body.pro-chart {
 .star-filter button { min-height: 44px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--text-2); font-size: 12px; }
 .star-filter button[aria-pressed=true] { color: var(--gold-hi); background: var(--ink-3); }
 .pillar-star { white-space: normal; overflow-wrap: anywhere; }
+
+.ln-grid.ln-strip {
+  position: relative; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78px;
+  overflow-x: auto; padding: 2px 2px 8px; gap: 7px; align-items: stretch;
+}
+.ln-column { min-width: 0; background: var(--ink-2); border-radius: 9px; border: 1px solid var(--line); }
+.ln-column .ln { width: 100%; border-radius: 8px 8px 0 0; }
+.ln-column-stars { display: grid; text-align: center; padding: 3px; }
+.ln-column-stars .pillar-star { min-height: 34px; font-size: 12px; }

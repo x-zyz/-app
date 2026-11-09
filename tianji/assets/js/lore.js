@@ -73,6 +73,15 @@
       (buttons || '<span class="tiny">按本版取法，这一组无命中。</span>') + '</div></section>';
   }
 
+  function yearColumn(hits, year, mode) {
+    var buttons = hits.map(function (hit, i) {
+      if (!isVisible(hit, mode)) return '';
+      return '<button class="pillar-star" data-star="' + i + '" data-scope="year" data-star-year="' +
+        year + '" aria-label="' + year + '年流年神煞 ' + esc(hit.name) + '">' + esc(hit.name) + '</button>';
+    }).join('');
+    return '<div class="ln-column-stars">' + (buttons || '<span class="pillar-star-empty">—</span>') + '</div>';
+  }
+
   function pillarStars(hits, index, mode) {
     var seen = new Set();
     var buttons = hits.map(function (hit, i) {
@@ -130,5 +139,5 @@
       '<details><summary>查看来源地址</summary><p class="pro-source">' + esc(rule.source) + '</p></details>';
   }
 
-  window.TianjiLore = { reader:reader, section:section, read:read, group:group, pillarStars:pillarStars, detail:detail };
+  window.TianjiLore = { reader:reader, section:section, read:read, group:group, yearColumn:yearColumn, pillarStars:pillarStars, detail:detail };
 }());
