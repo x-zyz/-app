@@ -43,7 +43,6 @@ body {
   background: var(--ink); pointer-events: none; z-index: 25;
 }
 .pro-chart .topbar { height: 58px; margin-bottom: 16px; }
-.pro-chart .topbar .seal { background: #8d463a; }
 .tabbar {
   width: min(calc(100% - 16px), 584px);
   bottom: calc(8px + var(--sab));
