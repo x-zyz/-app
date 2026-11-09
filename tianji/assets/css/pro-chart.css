@@ -200,3 +200,31 @@ body.pro-chart {
 .rel-outlook { color: var(--text-2); font-size: 12px; }
 .rel-outlook-watch { color: var(--gold-hi); }
 .rel-outlook-together { color: var(--jade); }
+.explain-body { display: grid; gap: 14px; padding-bottom: 10px; }
+.explain-section h3, .reading-modes legend { color: var(--gold-hi); font-size: 14px; font-weight: 650; }
+.explain-section p { margin-top: 5px; font-size: 14px; line-height: 1.75; color: var(--text-2); }
+.reading-modes { position: relative; min-width: 0; margin: 12px 0 0; padding: 8px 0 0; border: 0; }
+.reading-option { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.reading-option + label { display: inline-flex; align-items: center; min-height: 38px; padding: 0 12px; cursor: pointer; border-radius: 9px; color: var(--text-3); }
+.reading-option:checked + label { background: var(--ink-3); color: var(--gold-hi); }
+.reading-option:focus-visible + label { outline: 2px solid var(--gold-hi); }
+.reading-panels { display: grid; gap: 12px; margin-top: 8px; }
+.reading-original, .reading-translation { padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.mode-0:checked ~ .reading-panels .reading-translation, .mode-1:checked ~ .reading-panels .reading-original { display: none; }
+
+.today-calendar { display: flex; justify-content: flex-end; margin: -5px 0 12px; }
+.calendar-controls { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+.calendar-controls label { white-space: nowrap; font-size: 12px; }
+.calendar-controls select { font: inherit; color: var(--text); background: var(--ink-2); border: 1px solid var(--line); border-radius: 6px; min-height: 44px; }
+.calendar-controls button { min-height: 44px; min-width: 28px; border-radius: 8px; background: var(--ink-3); }
+.calendar-step { font-size: 21px; }
+.calendar-step:disabled { opacity: .4; }
+.calendar-today { padding: 0 8px; margin-left: auto; font-size: 12px; white-space: nowrap; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 2px; }
+.calendar-grid button { display: grid; place-content: center; gap: 3px; min-height: 44px; border-radius: 7px; }
+.calendar-grid button[aria-pressed=true] { background: var(--ink-3); outline: 1px solid var(--gold); }
+.calendar-grid button[aria-current=date] b { color: var(--jade); }
+.calendar-grid small, .calendar-week { color: var(--text-3); font-size: 10px; }
+.calendar-week { text-align: center; padding-bottom: 5px; }
+.calendar-detail { margin-top: 13px; padding-top: 10px; border-top: 1px solid var(--line); }
+.calendar-detail p { margin: 5px 0; font-size: 13px; line-height: 1.55; }

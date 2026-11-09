@@ -62,9 +62,31 @@
       body = p.gz + '与' + companions[0] + '同属「' + text + '」，古法借' +
         (images[text] || text) + '取象。这里显示的是整组干支的纳音，五行比例按实际干、支和藏干计算。';
     }
+    var lore = window.TianjiLore;
+    var original = type === 'tone' && text === '天上火' ? lore.reader('《三命通会》卷一 · 天上火',
+      '天上火者，溫暖山海，輝光宇宙。戊午為太陽則剛，己未為太陰則柔。',
+      '古书借日月的光热形容这种纳音。戊午借太阳取象，偏刚；己未借月亮取象，偏柔。') : '';
     return '<div class="sheet-hd"><span class="t">' + p.label + '柱' + labels[type] + ' · ' +
-      esc(text) + '</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div><p class="about-p">' +
-      esc(body) + '</p><p class="tiny">本柱 ' + p.gz + ' · ' + p.shiShenGan + '</p>';
+      esc(text) + '</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
+      '<div class="explain-body">' + lore.section('本盘提要', p.label + '柱' + p.gz + '，' + labels[type] + '为' + text + '。') +
+      lore.section('查法与解释', body) + original + '</div>';
+  }
+
+  function seasonalReading(c) {
+    var day = c.pillars[2], month = c.pillars[1];
+    if (day.gan !== '戊' || month.zhi !== '亥') return '';
+    function placement(gan) {
+      var exposed = c.pillars.filter(function (p) { return p.gan === gan; }).map(function (p) { return p.label + '干'; });
+      var hidden = c.pillars.filter(function (p) { return p.hide.includes(gan); }).map(function (p) { return p.label + '支' + p.zhi; });
+      return gan + '：' + (exposed.length ? '透于' + exposed.join('、') : '未透干') +
+        (hidden.length ? '，藏于' + hidden.join('、') : '，四支未藏');
+    }
+    var lore = window.TianjiLore;
+    return '<article class="classic-case"><h3>论戊生亥月</h3>' +
+      lore.section('本盘对照', '戊日主、亥月，匹配本条。' + placement('甲') + '；' + placement('丙') + '。') +
+      lore.reader('《穷通宝鉴》· 三冬戊土',
+        '十月戊土，时值小阳，阳气略出，先用甲木，次取丙火。非甲、土不灵。非丙、土不暖，安能生发万物。',
+        '戊土生在亥月，古书先看甲木能否疏土，再看丙火能否暖土。盘里出现甲或丙，还要区分它是露在天干，还是藏在地支。') + '</article>';
   }
 
   function caseReading(c) {
@@ -89,9 +111,9 @@
       (exact ? '原文有相同日柱与时柱的分条。' : '当前底本匹配到同日干、同时柱的总论。') +
       (seasonal.length ? '引文中的月令或季节与本盘相符。句中若另提年柱、组合或行运，还需逐项核对。' :
       '本条仍须连同原文中的年月、干支及行运条件阅读。');
-    return '<article class="classic-case"><h3>三命通会 <small>卷' + entry.volume + ' · ' + esc(entry.title) +
-      '</small></h3><p>' + esc(note) + '</p><blockquote>' + esc(quote) + '</blockquote>' +
-      (translated !== quote ? '<p><b>白话导读</b>　' + esc(translated) + '</p>' : '') +
+    return seasonalReading(c) + '<article class="classic-case"><h3>三命通会 <small>卷' + entry.volume + ' · ' + esc(entry.title) +
+      '</small></h3><p>' + esc(note) + '</p>' +
+      window.TianjiLore.reader('对应引文', quote, translated !== quote ? translated : '') +
       '<details><summary>展开对应条文</summary><p>' + esc(exact || entry.intro) + '</p></details>' +
       '<p class="tiny">古籍条文使用当时的术语与社会背景，原有论断可作为传统文本来读。</p></article>';
   }

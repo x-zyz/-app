@@ -44,12 +44,29 @@
     });
   }
 
+  var readerId = 0;
+  function section(title, text) {
+    return '<section class="explain-section"><h3>' + esc(title) + '</h3><p>' + esc(text) + '</p></section>';
+  }
+
+  function reader(title, original, translation) {
+    if (!original) return section('今译 · ' + title, translation);
+    if (!translation) return section('原文 · ' + title, original);
+    var id = 'reading-' + (++readerId);
+    return '<fieldset class="reading-modes"><legend>' + esc(title) + '</legend>' +
+      ['原文','今译','对照'].map(function (label, i) {
+        return '<input class="reading-option mode-' + i + '" type="radio" name="' + id + '" id="' + id + '-' + i + '"' +
+          (i === 2 ? ' checked' : '') + '><label for="' + id + '-' + i + '">' + label + '</label>';
+      }).join('') + '<div class="reading-panels"><div class="reading-original">' + section('原文', original) +
+      '</div><div class="reading-translation">' + section('今译', translation) + '</div></div></fieldset>';
+  }
+
   function read(source) {
     var key = Object.keys(notes).find(function (name) { return source.section.includes(name); }) || '十神';
     var paragraphs = window.TianjiClassicTexts[key] || [];
     var matching = paragraphs.find(function (p) { return p.includes(source.quote); });
     var translation = source.quote.includes('水多宜火') ? '戊土生在秋冬，若命盘水气多，古法考虑用火温暖湿冷的土。' : notes[key];
-    return '<p><b>白话译读</b>　' + esc(translation) + '</p>' +
+    return reader(source.title + ' · ' + source.section, source.quote, translation) +
       (matching ? '<details><summary>查看原文上下文</summary><p>' + esc(matching) + '</p></details>' : '') +
       '<details><summary>离线阅读本篇原文</summary><div class="lore-original">' +
       paragraphs.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') +
@@ -104,12 +121,17 @@
     }).join('');
     return '<div class="sheet-hd"><span class="t">' + esc(name) +
       '</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-p">' + esc(meanings[name] || '传统命理中的辅助取象。') + '</p>' +
-      '<div class="lore-details">' + rows + '</div>' +
+      '<div class="explain-body">' +
+      section('本盘提要', locations.map(function (i) { return names[all[i].label] + all[i].gz; }).join('、') + '见' + name + '。') +
+      section('传统含义', meanings[name] || '传统命理中的辅助取象。') +
+      (name === '天乙贵人' ? reader('《三命通会》卷三 · 论天乙贵人',
+        '其神最尊貴，所至之處，一切凶煞隱然而避。',
+        '书中把天乙比作尊贵的护助之神，遇到它时，古人会留意是否有缓和、助力的条件。') : '') +
+      '<div class="lore-details"><h3>查法与本盘联动</h3>' + rows + '</div></div>' +
       (cycle && natalHits.length ? '<p class="about-p">本命同名神煞：' +
         natalHits.map(function (i) { return names[natal[i].label] + natal[i].gz; }).join('、') + '。</p>' : '') +
       '<p class="tiny">神煞按本命起查，作为读盘辅助，结合月令、十神与干支关系理解。</p>';
   }
 
-  window.TianjiLore = { read:read, group:group, detail:detail };
+  window.TianjiLore = { reader:reader, section:section, read:read, group:group, detail:detail };
 }());
