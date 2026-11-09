@@ -540,18 +540,21 @@ button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
 .btn.ghost { background: var(--ink-2); color: var(--text-2); border-color: var(--gold-line); }
 .hero {
   --text: #FFF8E9;
-  --text-2: #E1E9D9;
-  --text-3: #C3D6C5;
+  --text-2: #EDF0FC;
+  --text-3: #DCE4F8;
   --gold: #EFD19B;
   --gold-hi: #FFF3D6;
-  color: var(--text); background: #16382E; border-color: #16382E;
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(11, 17, 35, .66), rgba(10, 15, 31, .59) 50%, rgba(9, 14, 31, .78)),
+    url("../img/milky-way.jpg") center / cover no-repeat #131C34;
+  border-color: #394361;
   padding: 19px clamp(14px, 4vw, 22px) 17px;
 }
-.hero .wm { width: 205px; top: -63px; right: -39px; opacity: .23; }
+.hero-credit { margin-top: 10px; text-align: right; font-size: 0.6875rem; color: var(--text-3); }
 .hero-date { flex-wrap: wrap; }
 .hero-main { gap: clamp(10px, 4vw, 22px); margin-top: 11px; }
 .ring-wrap { width: clamp(83px, 25vw, 113px); height: auto; aspect-ratio: 1; }
-.ring-bg { stroke: #426356; stroke-width: 4; }
+.ring-bg { stroke: #586786; stroke-width: 4; }
 .ring-fg { stroke: var(--gold); stroke-width: 4; filter: none; }
 .ring-score { color: var(--gold-hi); background: none; font-size: clamp(29px, 8vw, 41px); }
 .ring-unit { font-size: 11px; letter-spacing: .08em; }
@@ -559,9 +562,9 @@ button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
 .hero-say p { color: var(--text-2); font-family: var(--sans); font-size: 14px; line-height: 1.6; }
 .dims { gap: 11px 18px; }
 .dim .dim-hd span, .lucky .it .lab { font-size: 12px; letter-spacing: .03em; }
-.dim .track { height: 4px; background: #426356; }
+.dim .track { height: 4px; background: #586786; }
 .dim .fill { background: #D9BE89; box-shadow: none; }
-.lucky { border-color: #426356; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lucky { border-color: #586786; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .lucky .it .val { font-size: 15px; }
 .yiji { background: var(--line); }
 .yiji .lab { font-family: var(--serif); font-size: 16px; font-weight: 600; }
