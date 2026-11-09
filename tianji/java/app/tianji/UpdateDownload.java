@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import org.json.JSONObject;
 
 final class UpdateDownload {
+    private static final String PROXY = "https://gh-proxy.org/";
     private static final String APK = "application/vnd.android.package-archive";
     private final Activity activity;
     private final DownloadManager manager;
@@ -28,14 +29,16 @@ final class UpdateDownload {
         state = activity.getSharedPreferences("release-download", Context.MODE_PRIVATE);
     }
 
-    synchronized String start(String tag, JSONObject release, boolean restart) {
+    synchronized String start(String tag, JSONObject release, boolean restart, boolean proxy) {
         if (release == null || !release.optBoolean("apk") || !release.optString("tag").equals(tag)) return "error";
         String progress = progress(tag);
         if ("ready".equals(progress) || (!restart && !"none".equals(progress) && !"error".equals(progress))) return progress;
         try {
             long previous = state.getLong("id", -1);
             if (previous >= 0) manager.remove(previous);
-            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(ReleaseUpdate.link(tag, true)))
+            String link = ReleaseUpdate.link(tag, true);
+            if (proxy) link = PROXY + link;
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(link))
                     .setTitle("Tianji " + tag)
                     .setMimeType(APK)
                     .setDestinationInExternalFilesDir(activity, null, "update-" + tag + ".apk")

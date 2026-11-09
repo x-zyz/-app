@@ -27,10 +27,13 @@
 
   function open(openSheet) {
     var native = root.Android;
-    var current = native && native.appVersion ? native.appVersion() : '3.7';
+    var current = native && native.appVersion ? native.appVersion() : '3.8';
     openSheet('<div class="sheet-hd"><span class="t">检查更新</span>' +
       '<button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
       '<p class="about-p" data-update-status role="status"></p>' +
+      '<label class="update-route" hidden>下载线路<select data-update-route>' +
+      '<option value="direct">GitHub 直连</option><option value="proxy">GH-Proxy 代理</option>' +
+      '</select></label>' +
       '<div class="sheet-actions"><button class="btn" data-update-retry hidden>重试</button>' +
       '<button class="btn" data-update-download hidden></button>' +
       '<button class="btn ghost" data-update-browser hidden>打开发布页</button></div>', function (mask) {
@@ -38,6 +41,7 @@
       var retry = mask.querySelector('[data-update-retry]');
       var download = mask.querySelector('[data-update-download]');
       var browser = mask.querySelector('[data-update-browser]');
+      var route = mask.querySelector('[data-update-route]');
       browser.addEventListener('click', function () { if (latest) native.openUpdate(latest.tag); });
       var latest = null;
       var lastProgress, progressSince, restart = false;
@@ -51,15 +55,18 @@
         }
         var stalled = progress !== 'ready' && progress !== 'none' && Date.now() - progressSince >= 20000;
         if (progress === 'error' || stalled) {
+          route.disabled = false;
           restart = true;
           status.textContent = stalled ? '下载长时间没有进展。可以重新下载，或打开发布页手动下载。' : '下载未完成。可以重新下载，或打开发布页手动下载。';
           download.textContent = '重新下载';
           download.disabled = false;
         } else if (progress === 'ready') {
+          route.disabled = true;
           status.textContent = '下载完成。点「安装更新」打开 Android 安装确认。';
           download.textContent = '安装更新';
           download.disabled = false;
         } else if (progress !== 'none') {
+          route.disabled = true;
           status.textContent = progress === 'paused' ? '下载暂停，等待网络恢复…' : '正在下载更新… ' + progress + '%';
           download.disabled = true;
           timer = setTimeout(function () {
@@ -89,7 +96,7 @@
           }};
           native.installUpdate(id, latest.tag);
         } else {
-          var progress = native.downloadUpdate(latest.tag, restart);
+          var progress = native.downloadUpdate(latest.tag, restart, route.value === 'proxy');
           restart = false;
           lastProgress = null;
           watch(progress);
@@ -99,6 +106,7 @@
         retry.hidden = true;
         download.hidden = true;
         browser.hidden = true;
+        route.parentElement.hidden = true;
         status.textContent = '当前版本 ' + current + '。正在检查…';
         if (!native || !native.checkForUpdate) {
           status.textContent = '请在天机 Android 应用中检查更新。';
@@ -118,6 +126,7 @@
             download.hidden = false;
             if (result.apk) {
               browser.hidden = false;
+              route.parentElement.hidden = false;
               watch(native.updateProgress(result.tag));
             }
           } else {

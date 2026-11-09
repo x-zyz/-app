@@ -645,3 +645,6 @@ button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 [data-update-retry][hidden], [data-update-download][hidden], [data-update-browser][hidden] { display: none; }
+
+.update-route:not([hidden]) { display: grid; gap: 6px; margin: 12px 0; }
+.update-route select { min-height: 44px; padding-inline: 10px; border: 1px solid var(--gold-line); border-radius: 8px; background: var(--ink-2); color: var(--text); font: inherit; }
