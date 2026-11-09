@@ -2,7 +2,10 @@ package app.tianji;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,6 +22,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
 
@@ -58,6 +65,7 @@ public class MainActivity extends Activity {
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
+        s.setBlockNetworkLoads(true);
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
@@ -131,6 +139,59 @@ public class MainActivity extends Activity {
     }
 
     public class Bridge {
+        private final AtomicBoolean checkingUpdate = new AtomicBoolean();
+
+        @JavascriptInterface
+        public String appVersion() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (PackageManager.NameNotFoundException e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public void checkForUpdate(final int requestId) {
+            if (!checkingUpdate.compareAndSet(false, true)) {
+                deliverUpdate(requestId, "{\"error\":true}");
+                return;
+            }
+            new Thread(() -> {
+                String response;
+                try {
+                    response = ReleaseUpdate.fetch().toString();
+                } catch (IOException | JSONException e) {
+                    response = "{\"error\":true}";
+                } finally {
+                    checkingUpdate.set(false);
+                }
+                deliverUpdate(requestId, response);
+            }, "tianji-update").start();
+        }
+
+        private void deliverUpdate(int requestId, String json) {
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    String script = "if(window.TianjiUpdates)window.TianjiUpdates.received("
+                            + requestId + ",JSON.parse(" + JSONObject.quote(json) + "))";
+                    web.evaluateJavascript(script, null);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void openUpdate(final String tag, final boolean download) {
+            String link = ReleaseUpdate.link(tag, download);
+            if (link == null) return;
+            runOnUiThread(() -> {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(link)));
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(MainActivity.this, "没有可打开下载链接的浏览器", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
         @JavascriptInterface
         public void setChartBars(final boolean dark) {
             runOnUiThread(() -> {
@@ -184,4 +245,3 @@ public class MainActivity extends Activity {
         }
     }
 }
-

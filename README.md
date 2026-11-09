@@ -3,8 +3,8 @@
 离线安卓算命 App：四柱八字、五行十神、神煞、大运流年、每日运势、六十四卦求签。
 
 - 完整开发交接文档：见 `HANDOFF.md`（架构、命理引擎、界面、坑位、扩展指南）。
-- 应用版本 2.6（专业细盘）。安装包 `tianji-v2.6.apk` 与本源码包分别提供。
-- 包名 `app.tianji`，minSdk 24 / target 35，单 Activity + WebView，完全离线。
+- 应用版本 2.7（专业细盘）。安装包 `tianji-v2.7.apk` 与本源码包分别提供。
+- 包名 `app.tianji`，minSdk 24 / target 35，单 Activity + WebView，排盘离线。
 
 ## 专业细盘
 
@@ -67,5 +67,5 @@ tools/
 
 ## 说明
 
-- 完全离线，无网络权限；数据只存 localStorage（`tj.birth` / `tj.draw` / `tj.pref`）。
+- 手动检查更新会查询 GitHub 公开 Release，排盘和生辰资料在本机处理，数据存于 localStorage（`tj.birth` / `tj.draw` / `tj.pref`）。
 - 命理输出仅供文化娱乐，不构成决策依据。
