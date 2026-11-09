@@ -396,64 +396,73 @@
     return [ZHI[(start + 10) % 12], ZHI[(start + 11) % 12]];
   }
 
-  function shenSha(pillars, dayGan, yearGan, yearZhi, monthZhi) {
+  function shenSha(pillars, dayGan, yearGan, yearZhi, monthZhi, natal) {
+    natal = natal || pillars;
     var zs = pillars.map(function (p) { return p.zhi; });
     var gs = pillars.map(function (p) { return p.gan; });
     var out = [];
     function push(name, idxs, src) {
       if (!idxs.length) return;
-      var k = name + idxs.join('');
+      var k = name + idxs.join('') + src;
       for (var i = 0; i < out.length; i++) if (out[i].k === k) return;
       out.push({ k: k, name: name, pillars: idxs, src: src });
     }
     function byZhi(name, zhis, src) {
       var idxs = [];
       zs.forEach(function (z, i) { if (zhis.indexOf(z) >= 0) idxs.push(i); });
-      push(name, idxs, src);
+      push(name, idxs, src + ' → 地支' + zhis.join('、'));
     }
     function byGan(name, gans, src) {
       var idxs = [];
       gs.forEach(function (g, i) { if (gans.indexOf(g) >= 0) idxs.push(i); });
-      push(name, idxs, src);
+      push(name, idxs, src + ' → 天干' + gans.join('、'));
     }
 
-    byZhi('天乙贵人', TIANYI[dayGan], '日干');
-    byZhi('文昌贵人', [WENCHANG[dayGan]], '日干');
-    byZhi('禄神', [LUSHEN[dayGan]], '日干');
-    if (YANGREN[dayGan]) byZhi('羊刃', [YANGREN[dayGan]], '日干');
-    byZhi('国印贵人', [GUOYIN[dayGan]], '日干');
-    byZhi('金舆', [JINYU[dayGan]], '日干');
-    byZhi('太极贵人', TAIJI[dayGan], '日干');
+    byZhi('天乙贵人', TIANYI[dayGan], '日干' + dayGan);
+    byZhi('文昌贵人', [WENCHANG[dayGan]], '日干' + dayGan);
+    byZhi('禄神', [LUSHEN[dayGan]], '日干' + dayGan);
+    if (YANGREN[dayGan]) byZhi('羊刃', [YANGREN[dayGan]], '日干' + dayGan);
+    byZhi('国印贵人', [GUOYIN[dayGan]], '日干' + dayGan);
+    byZhi('金舆', [JINYU[dayGan]], '日干' + dayGan);
+    byZhi('太极贵人', TAIJI[dayGan], '日干' + dayGan);
 
-    [yearZhi, zs[2]].forEach(function (base, bi) {
-      var src = bi === 0 ? '年支' : '日支';
+    [yearZhi, natal[2].zhi].forEach(function (base, bi) {
+      var src = (bi === 0 ? '年支' : '日支') + base;
       var g = SANHE_GROUP[base];
       if (TAOHUA[g]) byZhi('桃花', [TAOHUA[g]], src);
       if (YIMA[g]) byZhi('驿马', [YIMA[g]], src);
       if (HUAGAI[g]) byZhi('华盖', [HUAGAI[g]], src);
       if (JIANGXING[g]) byZhi('将星', [JIANGXING[g]], src);
+      byZhi('劫煞', [{子:'巳', 午:'亥', 卯:'申', 酉:'寅'}[g]], src);
+      byZhi('灾煞', [{子:'午', 午:'子', 卯:'酉', 酉:'卯'}[g]], src);
+      byZhi('亡神', [{子:'亥', 午:'巳', 卯:'寅', 酉:'申'}[g]], src);
     });
 
     var td = TIANDE[monthZhi];
     if (td) {
-      if (GAN.indexOf(td) >= 0) byGan('天德贵人', [td], '月支');
-      else byZhi('天德贵人', [td], '月支');
+      if (GAN.indexOf(td) >= 0) byGan('天德贵人', [td], '月支' + monthZhi);
+      else byZhi('天德贵人', [td], '月支' + monthZhi);
     }
-    byGan('月德贵人', [YUEDE[monthZhi]], '月支');
+    byGan('月德贵人', [YUEDE[monthZhi]], '月支' + monthZhi);
 
-    byZhi('红鸾', [HONGLUAN[yearZhi]], '年支');
-    byZhi('天喜', [TIANXI[yearZhi]], '年支');
-    byZhi('孤辰', [GUCHEN[yearZhi]], '年支');
-    byZhi('寡宿', [GUASU[yearZhi]], '年支');
+    byZhi('红鸾', [HONGLUAN[yearZhi]], '年支' + yearZhi);
+    byZhi('天喜', [TIANXI[yearZhi]], '年支' + yearZhi);
+    byZhi('孤辰', [GUCHEN[yearZhi]], '年支' + yearZhi);
+    byZhi('寡宿', [GUASU[yearZhi]], '年支' + yearZhi);
 
-    var kong = xunKong(pillars[2].gz);
+    var kong = xunKong(natal[2].gz);
     var kidx = [];
     zs.forEach(function (z, i) { if (kong.indexOf(z) >= 0) kidx.push(i); });
-    push('空亡', kidx, '日柱旬空');
+    push('空亡', kidx, '日柱' + natal[2].gz + ' → 旬空' + kong.join('、'));
 
     var order = ['天乙贵人', '天德贵人', '月德贵人', '文昌贵人', '太极贵人', '国印贵人', '禄神', '羊刃', '金舆', '桃花', '驿马', '华盖', '将星', '红鸾', '天喜', '孤辰', '寡宿', '空亡'];
     out.sort(function (a, b) { return order.indexOf(a.name) - order.indexOf(b.name); });
     return out;
+  }
+
+  function cycleStars(chart, gz) {
+    var p = chart.pillars;
+    return shenSha([{ gan: gz[0], zhi: gz[1] }], p[2].gan, p[0].gan, p[0].zhi, p[1].zhi, p);
   }
 
   function relations(list) {
@@ -547,6 +556,7 @@
     daily: daily,
     drawHexagram: drawHexagram,
     liunian: liunian,
+    cycleStars: cycleStars,
     relations: relations,
     changSheng: changSheng,
     xunKong: xunKong,

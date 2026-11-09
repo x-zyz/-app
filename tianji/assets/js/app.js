@@ -6,6 +6,7 @@
   var HEX = window.HEXAGRAMS;
   var Solar = window.Solar;
   var Pro = window.TianjiProChart;
+  var Lore = window.TianjiLore;
 
   var K_BIRTH = 'tj.birth';
   var K_DRAW = 'tj.draw';
@@ -262,11 +263,6 @@
       row('p-cs', '空亡', function (x) { return A.xunKong(x.gz).join(''); }) +
       row('p-nayin', '纳音', function (x) { return esc(x.nayin); });
 
-    var ssRows = c.shenSha.length ? c.shenSha.map(function (s) {
-      var tags = s.pillars.map(function (i) { return '<span class="tag-mini">' + '年月日时'[i] + '</span>'; }).join('');
-      return '<div class="ssrow"><span class="ssname">' + s.name + '</span><span class="sssrc">' + s.src + '</span><span class="sstag">' + tags + '</span></div>';
-    }).join('') : '<div class="ssrow"><span class="ssname" style="color:var(--text-2)">四柱不见常用神煞</span></div>';
-
     var yunIdx = pickYunIndex(c);
     var yun = c.yun && c.yun.list[yunIdx];
     var yunRelHtml = '';
@@ -289,7 +285,7 @@
             '<span class="g">' + Pro.ganZhi(y.gz) + '</span><span class="ss">' + y.ss + '</span>' +
             '<span class="a">' + y.start + '–' + y.end + '</span></button>';
         }).join('') + '</div>' +
-        yunRelHtml + '</div>';
+        yunRelHtml + Lore.group('大运神煞', yun.gz + ' · ' + yun.start + '–' + yun.end, A.cycleStars(c, yun.gz), 'yun') + '</div>';
     }
 
     var lnHtml = '';
@@ -320,9 +316,8 @@
       '<section class="section pro-diagram" id="chart-diagram"></section>' +
       Pro.lifestyle(result) +
       Pro.readings(result) +
-      '<section class="section"><div class="section-hd"><h2 class="t">神煞</h2><span class="a">取法及落柱</span></div>' +
-      '<div class="card" style="padding:6px 16px"><div class="sslist">' + ssRows + '</div></div></section>' +
-      yunHtml + lnHtml + '</div>';
+      Lore.group('四柱神煞', '年柱 · 月柱 · 日柱 · 时柱', c.shenSha, 'natal') +
+      yunHtml + lnHtml + '<div id="year-stars"></div></div>';
   }
 
   /* ---------- 求签 ---------- */
@@ -424,14 +419,14 @@
       '<div class="list">' +
       '<button class="list-row tap" data-act="open-birth"><span>出生信息</span><span class="v">' + (b ? '修改' : '录入') + ' <span class="arrow">›</span></span></button>' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.2 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.3 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.2</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.3</p>' +
       '</div>';
   }
 
@@ -442,6 +437,16 @@
     var view = diagramFor(getChart());
     area.innerHTML = view.diagram;
     $('#cycle-overview').textContent = view.summary;
+    var yearStars = $('#year-stars');
+    if (yearStars) {
+      var chart = getChart();
+      var index = pickYunIndex(chart);
+      var yun = chart.yun && chart.yun.list[index];
+      if (!yun) return;
+      var year = clamp(state.diagramYear || new Date().getFullYear(), yun.start, yun.end);
+      var ln = A.liunian(chart, year, index);
+      yearStars.innerHTML = Lore.group('流年神煞', year + '年 · ' + ln.gz, A.cycleStars(chart, ln.gz), 'year', year);
+    }
   }
 
   function render() {
@@ -516,7 +521,7 @@
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v1.2</p>' +
+      '<p class="about-lead">天机 · v1.3</p>' +
       '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">所有推算均在本机完成，不联网、不上传，亦不申请任何敏感权限。</p>' +
       '<div class="divider"></div>' +
@@ -563,6 +568,7 @@
       '<div class="field" style="margin-top:16px"><div class="lab">与命局</div><div class="rel-wrap">' +
       relChips(ln.rels, '与命局无冲无合') + '</div></div>' +
       '<div class="field"><div class="lab">与大运</div><div class="rel-wrap">' + yunChips + '</div></div>' +
+      Lore.group('流年神煞', yearVal + '年 · ' + ln.gz, A.cycleStars(c, ln.gz), 'year', yearVal) +
       (ln.note ? '<p class="about-p" style="margin-top:4px">' + ln.note + '</p>' : '') +
       '<div class="sheet-actions" style="margin-top:14px"><button class="btn" data-act="close-sheet" style="flex:1">关 闭</button></div>'
     );
@@ -623,6 +629,18 @@
     document.addEventListener('click', function (e) {
       var tab = e.target.closest('[data-tab]');
       if (tab) { go(tab.dataset.tab); return; }
+
+      var star = e.target.closest('[data-star]');
+      if (star) {
+        var chart = getChart();
+        var scope = star.dataset.scope;
+        var cycle = null;
+        if (scope === 'yun') cycle = chart.yun.list[pickYunIndex(chart)];
+        if (scope === 'year') cycle = A.liunian(chart, +star.dataset.starYear, pickYunIndex(chart));
+        var hits = cycle ? A.cycleStars(chart, cycle.gz) : chart.shenSha;
+        openSheet(Lore.detail(chart, hits[+star.dataset.star].name, scope, cycle, hits));
+        return;
+      }
 
       var diagramBtn = e.target.closest('[data-diagram]');
       if (diagramBtn) {

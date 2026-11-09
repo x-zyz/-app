@@ -108,7 +108,7 @@
       '<div class="card pro-reading-list">' + result.classics.map(function (source) {
         return '<article><h3>' + esc(source.title) + ' <small>' + esc(source.section) + '</small></h3><blockquote>' +
           esc(source.quote) + '</blockquote><p>' + esc(source.reason) + '</p>' +
-          (source.url ? '<details><summary>原文出处</summary><p class="pro-source">' + esc(source.url) + '</p></details>' : '') +
+          window.TianjiLore.read(source) +
           '</article>';
       }).join('') + '</div></section>';
   }
