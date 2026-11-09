@@ -63,6 +63,7 @@
     for (var i = 0; i < 5; i++) control.push(A.WX_KE[control[control.length - 1]]);
     return '<div class="page learn-page"><header class="page-heading"><h1 class="h1">命理学习</h1>' +
       '<p>按顺序读一张四柱命盘</p></header>' + example(chart,temporary) +
+      lesson('learn-classics','古籍书架','四部典籍选读 · 原文与今译', window.TianjiClassicLibrary.shelf()) +
       lesson('learn-route','01 如何看自己的盘','日主、月令、组合、岁运',
         '<ol class="learn-route">' + routes.map(function (r) { return '<li><b>' + r[0] + '</b><p>' + r[1] + '</p></li>'; }).join('') + '</ol>',true) +
       lesson('learn-elements','02 五行相生相克','先记两条循环，再看方向',

@@ -46,17 +46,23 @@ final class ReleaseUpdate {
                 if (download == null || release.optBoolean("draft") || release.optBoolean("prerelease")) {
                     throw new IOException("Unsupported release metadata");
                 }
-                boolean apk = false;
+                String digest = "";
+                long size = 0;
                 JSONArray assets = release.optJSONArray("assets");
                 for (int i = 0; assets != null && i < assets.length(); i++) {
                     JSONObject asset = assets.optJSONObject(i);
                     if (asset != null && "uploaded".equals(asset.optString("state"))
                             && asset.optLong("size") > 0 && download.equals(asset.optString("browser_download_url"))) {
-                        apk = true;
+                        String hash = asset.optString("digest");
+                        long bytesExpected = asset.optLong("size");
+                        if (hash.matches("sha256:[0-9a-f]{64}") && bytesExpected <= 64L * 1024 * 1024) {
+                            digest = hash;
+                            size = bytesExpected;
+                        }
                         break;
                     }
                 }
-                return new JSONObject().put("tag", tag).put("apk", apk);
+                return new JSONObject().put("tag", tag).put("apk", size > 0).put("digest", digest).put("size", size);
             }
         } finally {
             conn.disconnect();

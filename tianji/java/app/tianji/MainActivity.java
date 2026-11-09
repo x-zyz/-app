@@ -140,6 +140,9 @@ public class MainActivity extends Activity {
 
     public class Bridge {
         private final AtomicBoolean checkingUpdate = new AtomicBoolean();
+        private final AtomicBoolean installingUpdate = new AtomicBoolean();
+        private final UpdateDownload downloads = new UpdateDownload(MainActivity.this);
+        private volatile JSONObject latestRelease;
 
         @JavascriptInterface
         public String appVersion() {
@@ -159,7 +162,10 @@ public class MainActivity extends Activity {
             new Thread(() -> {
                 String response;
                 try {
-                    response = ReleaseUpdate.fetch().toString();
+                    JSONObject release = ReleaseUpdate.fetch();
+                    latestRelease = release;
+                    response = new JSONObject().put("tag", release.getString("tag"))
+                            .put("apk", release.getBoolean("apk")).toString();
                 } catch (IOException | JSONException e) {
                     response = "{\"error\":true}";
                 } finally {
@@ -180,8 +186,38 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void openUpdate(final String tag, final boolean download) {
-            String link = ReleaseUpdate.link(tag, download);
+        public String downloadUpdate(String tag) { return downloads.start(tag, latestRelease); }
+
+        @JavascriptInterface
+        public String updateProgress(String tag) { return downloads.progress(tag); }
+
+        @JavascriptInterface
+        public void installUpdate(int requestId, String tag) {
+            if (!installingUpdate.compareAndSet(false, true)) return;
+            new Thread(() -> {
+                try {
+                    Intent intent = downloads.installer(tag);
+                    runOnUiThread(() -> {
+                        installingUpdate.set(false);
+                        if (isFinishing() || isDestroyed()) return;
+                        try {
+                            startActivity(intent);
+                            boolean settings = android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES.equals(intent.getAction());
+                            deliverUpdate(requestId, settings ? "{\"settings\":true}" : "{\"installer\":true}");
+                        } catch (RuntimeException e) {
+                            deliverUpdate(requestId, "{\"error\":true}");
+                        }
+                    });
+                } catch (IOException | java.security.NoSuchAlgorithmException | RuntimeException e) {
+                    installingUpdate.set(false);
+                    deliverUpdate(requestId, "{\"error\":true}");
+                }
+            }, "tianji-install").start();
+        }
+
+        @JavascriptInterface
+        public void openUpdate(final String tag) {
+            String link = ReleaseUpdate.link(tag, false);
             if (link == null) return;
             runOnUiThread(() -> {
                 try {
