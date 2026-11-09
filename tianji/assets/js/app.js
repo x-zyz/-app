@@ -10,12 +10,14 @@
   var Notes = window.TianjiPillarNotes;
 
   var K_BIRTH = 'tj.birth';
+  var K_RECORDS = 'tj.records.v1';
   var K_DRAW = 'tj.draw';
   var K_PREF = 'tj.pref';
 
   var state = {
     tab: 'home',
     birth: null,
+    records: { entries: [], own: null, active: null },
     chart: null,
     daily: null,
     draw: null,
@@ -67,10 +69,55 @@
     return state.chart;
   }
 
+  function ownRecord() {
+    return state.records.entries.find(function (entry) { return entry.id === state.records.own; });
+  }
+
   function getDaily() {
-    if (!getChart()) return null;
-    if (!state.daily) state.daily = A.daily(state.chart, new Date(), state.birth);
-    return state.daily;
+    var entry = ownRecord();
+    if (!entry) return null;
+    var day = todayKey();
+    if (!state.daily || state.daily.day !== day || state.daily.id !== entry.id) {
+      try {
+        var chart = A.chart(entry.birth);
+        state.daily = { day: day, id: entry.id, chart: chart, result: A.daily(chart, new Date(), entry.birth) };
+      } catch (e) { console.error(e); return null; }
+    }
+    return state.daily.result;
+  }
+
+  function commitRecords(records) {
+    try {
+      localStorage.setItem(K_RECORDS, JSON.stringify(records));
+      state.records = records;
+    } catch (e) { throw new Error('本机存储写入失败，请检查剩余空间后重试。'); }
+  }
+
+  function birthKey(b) {
+    return [b.y, b.m, b.d, b.hour, b.minute, b.zhi, b.gender, b.city && b.city.id, b.offsetMinutes].join('|');
+  }
+
+  function birthLabel(b) {
+    return b.y + '年' + b.m + '月' + b.d + '日 · ' +
+      (b.city ? pad(b.hour) + ':' + pad(b.minute) + ' · ' + b.city.name : A.ZHI_LABEL[b.zhi] + '时') +
+      ' · ' + (b.gender === 'm' ? '乾造' : '坤造');
+  }
+
+  function showChart(birth, chart) {
+    state.birth = birth;
+    state.chart = chart;
+    state.yunIdx = null;
+    state.diagramYear = null;
+    state.diagramTab = 'relations';
+    if (state.tab === 'chart') { render(); window.scrollTo(0, 0); }
+    else go('chart');
+  }
+
+  function instantChart() {
+    var now = new Date();
+    var birth = { instant: now.getTime(), y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate(),
+      hour: now.getHours(), minute: now.getMinutes(), second: now.getSeconds(), offsetMinutes: -now.getTimezoneOffset() };
+    showChart(birth, A.chart(birth));
   }
 
   function loadDraw() {
@@ -102,7 +149,8 @@
   /* ---------- 首页 ---------- */
   function viewHome() {
     var d = getDaily();
-    var head = d ? heroHTML(d) : emptyHTML();
+    var me = ownRecord();
+    var head = d ? '<p class="tiny today-profile">今日运势依据 · ' + esc(me.name || '本人命盘') + '</p>' + heroHTML(d) : emptyHTML();
     var lunar = Solar.fromDate(new Date()).getLunar();
     var term = lunar.getJieQi();
     var next = lunar.getNextJieQi(true);
@@ -115,7 +163,7 @@
   }
 
   function panSummaryHTML() {
-    var c = getChart();
+    var c = state.daily && ownRecord() ? state.daily.chart : null;
     if (!c) return '';
     var cells = c.pillars.map(function (p) {
       return '<div class="mp"><span class="l">' + p.label + '</span><span class="g">' + p.gan + p.zhi + '</span></div>';
@@ -162,12 +210,9 @@
   }
 
   function emptyHTML() {
-    return '<div class="card empty-hero">' +
-      '<div class="glyph"><i></i><i></i><i class="b"></i><i></i><i></i><i class="b"></i></div>' +
-      '<h2>未排命盘</h2>' +
-      '<p>输入生辰，方知日主强弱、五行喜忌。<br>此后每日运势，由此推演。</p>' +
-      '<button class="btn" data-act="open-birth">开始排盘</button>' +
-      '</div>';
+    return '<div class="card empty-hero"><h2>设置本人命盘</h2>' +
+      '<p>在「我的」里从本地记录选一张设为本人，今日运势会结合这张命盘和当日干支计算。</p>' +
+      '<button class="btn" data-tab="me">前往我的</button></div>';
   }
 
   function yijiHTML(d) {
@@ -229,10 +274,15 @@
     return { diagram: Pro.diagram(chart, state.diagramTab, yun, year, state.birth.gender), summary: Pro.cycleSummary(year, yun) };
   }
 
+  function chartActions() {
+    return '<div class="chart-actions"><button class="btn ghost" data-act="new-birth">新增排盘</button>' +
+      '<button class="btn" data-act="instant-chart">即时排盘</button></div>';
+  }
+
   function viewChart() {
     var c = getChart();
     if (!c) {
-      return '<div class="page">' + pageHeading('四柱命盘', '从公历生辰起盘') +
+      return '<div class="page">' + pageHeading('四柱命盘', '从公历生辰起盘') + chartActions() +
         '<div class="card empty-hero">' +
         '<div class="glyph"><i></i><i></i><i class="b"></i><i></i><i></i><i class="b"></i></div>' +
         '<h2>先立命盘</h2><p>选择公历生日、钟表时分和出生城市。<br>按真太阳时排盘，查看本命解析与岁运。</p>' +
@@ -309,7 +359,7 @@
         '<p class="tiny" style="margin-top:9px;letter-spacing:.14em">点选流年，看岁运与命局之冲合</p></div>';
     }
 
-    return '<div class="page pro-page">' + pageHeading('专业细盘', '本命四柱与岁运') +
+    return '<div class="page pro-page">' + pageHeading('专业细盘', state.birth.instant ? '按设备当前时间起盘' : '本命四柱与岁运') + chartActions() +
       Pro.overview(result, c) + Pro.birthSummary(state.birth, c) +
       '<section class="section"><div class="section-hd"><h2 class="t">四柱命盘</h2>' +
       '<span class="a">' + c.dayMaster.gan + c.dayMaster.wx + '日主 · ' + c.strength.label + '</span></div>' +
@@ -399,36 +449,33 @@
 
   /* ---------- 我的 ---------- */
   function viewMe() {
-    var b = state.birth;
-    var c = getChart();
-    var sub = b ? b.y + '年' + b.m + '月' + b.d + '日 · ' +
-      (b.city ? pad(b.hour) + ':' + pad(b.minute) + ' · ' + esc(b.city.name) : A.ZHI_LABEL[b.zhi] + '时') +
-      ' · ' + (b.gender === 'm' ? '男' : '女') : '尚未录入生辰';
-    var avatar = c ? c.dayMaster.gan : (b ? A.ZHI_LABEL[b.zhi] : '命');
-    var stats = c ?
-      '<div class="card" style="padding:0"><div class="me-stats">' +
-      '<div class="me-stat"><div class="v">' + c.dayMaster.gan + c.dayMaster.wx + '</div><div class="k">日主</div></div>' +
-      '<div class="me-stat"><div class="v">' + c.strength.label + '</div><div class="k">强弱</div></div>' +
-      '<div class="me-stat"><div class="v">' + (c.yun ? c.yun.startYear + '岁' + (c.yun.startMonth ? c.yun.startMonth + '月' : '') : '—') + '</div><div class="k">起运</div></div>' +
-      '</div></div>' : '';
-    return '<div class="page">' + pageHeading('我的', '生辰资料与偏好') +
-      '<div class="card me-hd">' +
-      '<div class="me-avatar">' + avatar + '</div>' +
-      '<div><div class="me-name">命主</div><div class="me-sub">' + sub + '</div></div>' +
-      '</div>' +
-      (stats ? '<div class="section">' + stats + '</div>' : '') +
+    var me = ownRecord();
+    var rows = state.records.entries.map(function (entry) {
+      var mine = me && me.id === entry.id;
+      return '<article class="record-row"><h3>' + esc(entry.name || '八字记录') +
+        (mine ? ' <small class="record-badge">本人</small>' : '') + '</h3><p>' + esc(birthLabel(entry.birth)) +
+        '</p><div class="record-actions"><button class="btn ghost" data-record-act="view" data-record-id="' + entry.id +
+        '">查看</button><button class="btn ghost" data-record-act="manage" data-record-id="' + entry.id +
+        '">管理</button>' + (mine ? '' : '<button class="btn ghost" data-record-act="own" data-record-id="' + entry.id +
+        '">设为本人</button>') + '</div></article>';
+    }).join('');
+    return '<div class="page">' + pageHeading('我的', '本机八字记录与偏好') +
+      '<div class="card me-hd"><div><div class="me-name">本人命盘</div><div class="me-sub">' +
+      (me ? esc((me.name ? me.name + ' · ' : '') + birthLabel(me.birth)) : '尚未指定，可从下方记录选择') +
+      '</div></div></div><section class="section"><div class="section-hd"><h2 class="t">查询记录</h2>' +
+      '<button class="btn ghost" data-act="new-birth">新增排盘</button></div><div class="card records-list">' +
+      (rows || '<p class="tiny">完成一次出生排盘后，资料会保存在这里。</p>') + '</div></section>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list">' +
-      '<button class="list-row tap" data-act="open-birth"><span>出生信息</span><span class="v">' + (b ? '修改' : '录入') + ' <span class="arrow">›</span></span></button>' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.6 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.7 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.6</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.7</p>' +
       '</div>';
   }
 
@@ -458,6 +505,7 @@
     else if (state.tab === 'chart') html = viewChart();
     else if (state.tab === 'draw') html = viewDraw();
     else html = viewMe();
+    if (state.tab === 'home') state.homeDay = todayKey();
     v.innerHTML = html;
     refreshDiagram();
     var dark = state.tab === 'chart';
@@ -523,7 +571,7 @@
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v1.6</p>' +
+      '<p class="about-lead">天机 · v1.7</p>' +
       '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">所有推算均在本机完成，不联网、不上传，亦不申请任何敏感权限。</p>' +
       '<div class="divider"></div>' +
@@ -540,7 +588,7 @@
   function confirmClear() {
     openSheet(
       '<div class="sheet-hd"><span class="t">清除记录</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-p">将删除本机的生辰信息与今日签文，此操作不可撤销。</p>' +
+      '<p class="about-p">将删除本机全部八字记录、本人设置与今日签文，此操作不可撤销。</p>' +
       '<div class="sheet-actions" style="margin-top:22px">' +
       '<button class="btn ghost" data-act="close-sheet" style="flex:1">取消</button>' +
       '<button class="btn" data-act="do-clear" style="flex:1;border-color:rgba(196,117,107,.5);color:#E0A79E">清 除</button>' +
@@ -577,29 +625,65 @@
   }
 
   /* 生辰录入 */
-  function openBirthSheet() {
+  function openBirthSheet(initial) {
     window.TianjiBirthForm.open({
-      birth: state.birth,
+      birth: initial && !initial.instant ? initial : null,
       openSheet: openSheet,
       closeSheet: closeSheet,
       onSave: function (birth) {
         var chart = A.chart(birth);
-        state.birth = birth;
-        state.chart = chart;
-        state.daily = null;
-        state.yunIdx = null;
-        state.diagramYear = null;
-        state.diagramTab = 'relations';
-        store(K_BIRTH, birth);
+        var entries = state.records.entries.slice();
+        var existing = entries.find(function (item) { return birthKey(item.birth) === birthKey(birth); });
+        var entry = existing || { id: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 8), name: '', birth: birth };
+        if (existing) entries.splice(entries.indexOf(existing), 1);
+        entries.unshift(entry);
+        commitRecords({entries: entries, own: state.records.own, active: entry.id});
         haptic(16);
-        if (state.tab === 'chart') {
-          render();
-          window.scrollTo(0, 0);
-        } else {
-          go('chart');
-        }
+        showChart(birth, chart);
       }
     });
+  }
+
+  function recordAction(action, entry) {
+    if (!entry) return;
+    var records = state.records;
+    if (action === 'view') {
+      var chart = A.chart(entry.birth);
+      commitRecords({entries: records.entries, own: records.own, active: entry.id});
+      showChart(entry.birth, chart);
+    } else if (action === 'own') {
+      commitRecords({entries: records.entries, own: entry.id, active: records.active});
+      state.daily = null;
+      render();
+    } else {
+      openSheet('<div class="sheet-hd"><span class="t">管理八字记录</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
+        '<p class="about-p">' + esc(birthLabel(entry.birth)) + '</p><label class="record-name-label">备注名' +
+        '<input class="record-name" maxlength="32" value="' + esc(entry.name) + '" placeholder="例如：我的、家人"></label>' +
+        '<div class="sheet-actions"><button class="btn ghost" data-record-delete>删除</button><button class="btn" data-record-rename>保存备注</button></div>' +
+        '<p class="tiny record-error" role="alert"></p>', function (mask) {
+        mask.addEventListener('click', function (e) {
+          var save = e.target.closest('[data-record-rename]'), remove = e.target.closest('[data-record-delete]');
+          if (!save && !remove) return;
+          if (remove && remove.dataset.confirm !== 'yes') {
+            remove.dataset.confirm = 'yes';
+            remove.textContent = '确认删除';
+            return;
+          }
+          try {
+            var name = $('.record-name', mask).value.trim();
+            var next = save ? records.entries.map(function (item) {
+              return item.id === entry.id ? { id: item.id, name: name, birth: item.birth } : item;
+            }) : records.entries.filter(function (item) { return item.id !== entry.id; });
+            commitRecords({ entries: next, own: remove && records.own === entry.id ? null : records.own,
+              active: remove && records.active === entry.id ? null : records.active });
+            if (remove && records.active === entry.id && !(state.birth && state.birth.instant)) { state.birth = null; state.chart = null; }
+            state.daily = null;
+            closeSheet();
+            render();
+          } catch (error) { $('.record-error', mask).textContent = error.message; }
+        });
+      });
+    }
   }
 
   function shake() {
@@ -615,7 +699,8 @@
 
     setTimeout(function () {
       var count = (d && d.count ? d.count : 0) + 1;
-      var seed = todayKey() + '|' + (state.birth ? JSON.stringify(state.birth) : 'anon') + '|' + count;
+      var me = ownRecord();
+      var seed = todayKey() + '|' + (me ? JSON.stringify(me.birth) : 'anon') + '|' + count;
       var pick = hexOf(seed);
       state.draw = { date: todayKey(), n: pick.n, count: count, hex: HEX[pick.n] };
       store(K_DRAW, state.draw);
@@ -683,12 +768,21 @@
         return;
       }
 
+      var record = e.target.closest('[data-record-act]');
+      if (record) {
+        try {
+          recordAction(record.dataset.recordAct, state.records.entries.find(function (item) { return item.id === record.dataset.recordId; }));
+        } catch (error) { window.alert(error.message); }
+        return;
+      }
       var act = e.target.closest('[data-act]');
       if (!act) return;
       var a = act.dataset.act;
 
       if (a === 'calendar') { window.TianjiCalendar.open(openSheet); return; }
-      if (a === 'open-birth') { haptic(8); openBirthSheet(); }
+      if (a === 'open-birth') { haptic(8); openBirthSheet(state.birth); }
+      if (a === 'new-birth') { haptic(8); openBirthSheet(null); }
+      if (a === 'instant-chart') { haptic(8); instantChart(); }
       if (a === 'shake') { shake(); }
       if (a === 'reset-draw') { state.draw = null; store(K_DRAW, null); render(); }
       if (a === 'toggle-vibrate') {
@@ -701,6 +795,8 @@
       if (a === 'about') { haptic(8); aboutSheet(); }
       if (a === 'clear-all') { haptic(8); confirmClear(); }
       if (a === 'do-clear') {
+        try { commitRecords({ entries: [], own: null, active: null }); }
+        catch (error) { window.alert(error.message); return; }
         localStorage.removeItem(K_BIRTH);
         localStorage.removeItem(K_DRAW);
         state.birth = null; state.chart = null; state.daily = null; state.draw = null;
@@ -709,6 +805,12 @@
       }
       if (a === 'close-sheet') closeSheet();
     });
+
+    function refreshToday() {
+      if (!document.hidden && state.tab === 'home' && state.homeDay !== todayKey()) render();
+    }
+    document.addEventListener('visibilitychange', refreshToday);
+    setInterval(refreshToday, 30000);
 
     window.__onBack = function () {
       if (sheetStack.length) { closeSheet(); return true; }
@@ -719,7 +821,16 @@
 
   /* ---------- 启动 ---------- */
   function boot() {
-    state.birth = store(K_BIRTH);
+    var records = store(K_RECORDS);
+    var legacy = !records && store(K_BIRTH);
+    if (records && Array.isArray(records.entries)) state.records = records;
+    if (legacy) {
+      var migrated = { entries: [{id:'legacy', name:'原有命盘', birth:legacy}], own:null, active:'legacy' };
+      try { commitRecords(migrated); localStorage.removeItem(K_BIRTH); }
+      catch (error) { state.records = migrated; console.error(error); }
+    }
+    var active = state.records.entries.find(function (entry) { return entry.id === state.records.active; });
+    state.birth = active ? active.birth : null;
     var pref = store(K_PREF);
     if (pref) state.pref = pref;
     state.draw = loadDraw();

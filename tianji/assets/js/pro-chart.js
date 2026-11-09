@@ -44,6 +44,11 @@
   }
 
   function birthSummary(birth, chart) {
+    if (birth.instant) {
+      return '<section class="pro-birth"><p class="pro-kicker">即时盘 · 设备当地钟表时间</p><h2>' +
+        timeLabel(birth) + ' <small>' + esc(offset(birth.offsetMinutes)) + '</small></h2>' +
+        '<p class="tiny">日、时柱按设备当地钟表时间。年、月柱按当前瞬间对照节气。即时盘为临时查看。</p></section>';
+    }
     var header = '<div class="pro-birth-title"><div><p class="pro-kicker">排盘资料</p><h2>' +
       (birth.gender === 'm' ? '乾造' : '坤造') + ' <small>' + esc(chart.lunar.text) + '</small></h2></div>' +
       '<button class="btn ghost" data-act="open-birth">编辑生辰</button></div>';
@@ -83,7 +88,7 @@
   }
 
   function cycleSummary(year, yun) {
-    if (!year || !yun) return '有可选岁运时，可在下方点选后查看这一时期与本命的关系。';
+    if (!year || !yun) return '出生排盘可在下方点选岁运查看对应关系。';
     var links = year.rels.concat(year.yunRel).slice(0, 3).map(function (rel) {
       return rel.text + (rel.pair ? '（' + rel.pair.split('').map(function (p) { return pillarNames[p]; }).join('、') + '）' : '');
     });
@@ -317,7 +322,7 @@
     return '<div class="section-hd"><h2 class="t">智能图示</h2><span class="a">' +
       (year && tab === 'relations' ? year.year + ' 流年 · ' + yun.gz + '大运' : '四柱结构') +
       '</span></div><div class="card diagram-card"><div class="diagram-tabs" aria-label="图示类型">' +
-      Object.keys(tabLabels).map(function (key) {
+      Object.keys(tabLabels).filter(function (key) { return gender || key !== 'kin'; }).map(function (key) {
         return '<button data-diagram="' + key + '" aria-pressed="' + (key === tab) + '">' + tabLabels[key] + '</button>';
       }).join('') + '</div><div class="diagram-body">' + content + '</div></div>';
   }

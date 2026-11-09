@@ -228,3 +228,17 @@ body.pro-chart {
 .calendar-week { text-align: center; padding-bottom: 5px; }
 .calendar-detail { margin-top: 13px; padding-top: 10px; border-top: 1px solid var(--line); }
 .calendar-detail p { margin: 5px 0; font-size: 13px; line-height: 1.55; }
+.chart-actions { display: flex; gap: 8px; margin: 0 0 14px; }
+.chart-actions .btn { flex: 1; padding-inline: 10px; }
+.today-profile { margin: 0 0 8px; }
+.records-list { padding-block: 6px; }
+.record-row { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.record-row:last-child { border-bottom: 0; }
+.record-row h3 { font-size: 15px; }
+.record-row p { margin-top: 4px; font-size: 13px; color: var(--text-2); }
+.record-badge { color: var(--jade); border: 1px solid var(--line); padding: 1px 5px; border-radius: 6px; font-size: 11px; }
+.record-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.record-actions .btn, .section-hd > .btn { min-height: 44px; padding: 0 10px; font-size: 12px; }
+.record-name-label { display: grid; gap: 6px; margin: 12px 0; font-size: 13px; }
+.record-name { min-height: 44px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--ink-2); color: var(--text); font: inherit; }
+.record-error { margin-top: 8px; }

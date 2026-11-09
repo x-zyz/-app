@@ -81,9 +81,9 @@
 
   function chart(birth) {
     var corrected = birth.city ? root.TianjiSolar.correct(birth) : null;
-    var clock = corrected || {
+    var clock = corrected || (birth.instant ? birth : {
       y: birth.y, m: birth.m, d: birth.d, hour: ZHI_HOUR[birth.zhi], minute: 30, second: 0
-    };
+    });
     var solar = L.Solar.fromYmdHms(clock.y, clock.m, clock.d, clock.hour, clock.minute, clock.second);
     var lunar = solar.getLunar();
     var ec = lunar.getEightChar();
@@ -91,8 +91,8 @@
     // Use the physical birth instant for year, month and 起运, and the
     // apparent solar clock at the birthplace for the day and hour pillars.
     var terms = lunar;
-    if (corrected) {
-      var china = new Date(corrected.utcMillis + 8 * 3600000);
+    if (corrected || birth.instant) {
+      var china = new Date((corrected ? corrected.utcMillis : birth.instant) + 8 * 3600000);
       terms = L.Solar.fromYmdHms(china.getUTCFullYear(), china.getUTCMonth() + 1, china.getUTCDate(),
         china.getUTCHours(), china.getUTCMinutes(), china.getUTCSeconds()).getLunar();
     }
@@ -163,7 +163,7 @@
     var missing = WX_ORDER.filter(function (k) { return counts[k] < 0.9; });
 
     var yun = null;
-    try {
+    if (!birth.instant) try {
       var y = termsEC.getYun(birth.gender === 'f' ? 0 : 1);
       var list = y.getDaYun().filter(function (d) { return d.getGanZhi(); }).slice(0, 10);
       yun = {
