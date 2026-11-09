@@ -99,13 +99,13 @@
       }).join('') + '</div></section>';
   }
 
-  function readings(result) {
+  function readings(result, chart) {
     return '<section class="section pro-reading"><div class="section-hd"><h2 class="t">命理解析</h2><span class="a">本命四柱</span></div>' +
       '<div class="card pro-reading-list">' + result.sections.map(function (section) {
         return '<article><h3>' + esc(section.title) + '</h3><p>' + esc(section.text) + '</p></article>';
       }).join('') + '</div></section>' +
       '<section class="section pro-reading"><div class="section-hd"><h2 class="t">古籍参照</h2><span class="a">原文与匹配依据</span></div>' +
-      '<div class="card pro-reading-list">' + result.classics.map(function (source) {
+      '<div class="card pro-reading-list">' + window.TianjiPillarNotes.caseReading(chart) + result.classics.map(function (source) {
         return '<article><h3>' + esc(source.title) + ' <small>' + esc(source.section) + '</small></h3><blockquote>' +
           esc(source.quote) + '</blockquote><p>' + esc(source.reason) + '</p>' +
           window.TianjiLore.read(source) +

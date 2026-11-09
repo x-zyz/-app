@@ -189,3 +189,7 @@ body.pro-chart {
 .lore-details article { padding: 10px 0; border-top: 1px solid var(--line); }
 .lore-details h3 { color: var(--gold-hi); font-size: 14px; }
 .lore-details p { margin: 6px 0; font-size: 13px; line-height: 1.65; }
+
+.pillar-explain { width: 100%; min-height: 38px; text-decoration: underline dotted; text-underline-offset: 3px; }
+.p-row > div:has(.pillar-explain) { padding-block: 2px; }
+.classic-case blockquote { color: var(--text); }

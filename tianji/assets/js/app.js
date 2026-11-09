@@ -7,6 +7,7 @@
   var Solar = window.Solar;
   var Pro = window.TianjiProChart;
   var Lore = window.TianjiLore;
+  var Notes = window.TianjiPillarNotes;
 
   var K_BIRTH = 'tj.birth';
   var K_DRAW = 'tj.draw';
@@ -258,10 +259,10 @@
             '<small>' + A.shiShen(c.dayMaster.gan, h) + '</small></span>';
         }).join('') + '</div>';
       }) +
-      row('p-cs', '星运', function (x, i) { return esc(c.dayStages[i]); }) +
-      row('p-cs', '自坐', function (x, i) { return esc(c.changSheng[i]); }) +
-      row('p-cs', '空亡', function (x) { return A.xunKong(x.gz).join(''); }) +
-      row('p-nayin', '纳音', function (x) { return esc(x.nayin); });
+      row('p-cs', '星运', function (x, i) { return Notes.cell(c, i, 'stage'); }) +
+      row('p-cs', '自坐', function (x, i) { return Notes.cell(c, i, 'seat'); }) +
+      row('p-cs', '空亡', function (x, i) { return Notes.cell(c, i, 'void'); }) +
+      row('p-nayin', '纳音', function (x, i) { return Notes.cell(c, i, 'tone'); });
 
     var yunIdx = pickYunIndex(c);
     var yun = c.yun && c.yun.list[yunIdx];
@@ -315,7 +316,7 @@
       '<div class="pro-wx-legend">' + A.WX_ORDER.map(function (wx) { return Pro.element(wx, wx); }).join('') + '</div></section>' +
       '<section class="section pro-diagram" id="chart-diagram"></section>' +
       Pro.lifestyle(result) +
-      Pro.readings(result) +
+      Pro.readings(result, c) +
       Lore.group('四柱神煞', '年柱 · 月柱 · 日柱 · 时柱', c.shenSha, 'natal') +
       yunHtml + lnHtml + '<div id="year-stars"></div></div>';
   }
@@ -419,14 +420,14 @@
       '<div class="list">' +
       '<button class="list-row tap" data-act="open-birth"><span>出生信息</span><span class="v">' + (b ? '修改' : '录入') + ' <span class="arrow">›</span></span></button>' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.3 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v1.4 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.3</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 1.4</p>' +
       '</div>';
   }
 
@@ -521,7 +522,7 @@
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v1.3</p>' +
+      '<p class="about-lead">天机 · v1.4</p>' +
       '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">所有推算均在本机完成，不联网、不上传，亦不申请任何敏感权限。</p>' +
       '<div class="divider"></div>' +
@@ -629,6 +630,12 @@
     document.addEventListener('click', function (e) {
       var tab = e.target.closest('[data-tab]');
       if (tab) { go(tab.dataset.tab); return; }
+
+      var note = e.target.closest('[data-pillar-note]');
+      if (note) {
+        openSheet(Notes.detail(getChart(), +note.dataset.pillarIndex, note.dataset.pillarNote));
+        return;
+      }
 
       var star = e.target.closest('[data-star]');
       if (star) {
