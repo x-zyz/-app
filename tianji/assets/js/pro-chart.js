@@ -228,16 +228,60 @@
       lines + nodes + '</svg><p class="tiny diagram-key">实线相生 · 虚线相克 · 百分比为本命加权占比</p>';
   }
 
+  var palaceAdvice = [
+    '和家里长辈讨论旧习惯时，先问它原来解决了什么问题，再提出一个可以试行的小调整。',
+    '家里对安排有分歧时，先说明自己能做到什么、需要什么，再约定下一次商量的时间。',
+    '和伴侣意见不同时，先各自说出最在意的一件事，再定一个双方都愿意试一周的做法。',
+    '遇到照顾晚辈或长期计划的分歧，把任务拆成一个小步骤，先约定负责人和回看时间。'
+  ];
+  var kinAdvice = [
+    '和父亲谈容易起争执的话题时，一次只讨论一个具体决定，把各自能承担的事说清楚。',
+    '和母亲沟通时，先说你希望她倾听还是给建议。若意见不同，约一个双方方便再聊的时间。',
+    '和兄弟姐妹分担家事前，把要做的事、各自负责的部分和时间写下来。',
+    palaceAdvice[2],
+    '和孩子或晚辈有分歧时，先问他们卡在哪一步，再一起定一个当周能做到的小目标。'
+  ];
+
+  function relationEvidence(chart, positions) {
+    var links = chart.relations.filter(function (r) {
+      if (r.pair) return positions.some(function (p) { return r.pair.includes(p.label); });
+      var branches = r.text.split(' ')[0];
+      return positions.some(function (p) { return branches.includes(p.zhi); });
+    });
+    return {
+      together: links.filter(function (r) { return ['合', '干合', '三合', '三会'].includes(r.kind); }),
+      tension: links.filter(function (r) { return ['冲', '干冲', '刑', '三刑', '害'].includes(r.kind); })
+    };
+  }
+
+  function relationReading(chart, positions, advice) {
+    if (!positions.length) return '<p class="rel-reading">线索有限。四柱未见这一取法对应的十神。</p>';
+    var links = relationEvidence(chart, positions);
+    var together = links.together.length > 0, tension = links.tension.length > 0;
+    var tone = together && tension ? '合与牵制并见' : tension ? '有牵制' : together ? '有相合线索' : '合冲线索较少';
+    function evidence(rows) {
+      return rows.map(function (r) {
+        var pair = r.pair ? '（' + Array.from(r.pair).map(function (label) { return pillarNames[label]; }).join('、') + '）' : '';
+        return r.text + pair;
+      }).join('、');
+    }
+    var why = (together ? '相合：' + evidence(links.together) + '。' : '') +
+      (tension ? '牵制：' + evidence(links.tension) + '。' : '');
+    return '<div class="rel-reading"><strong class="rel-outlook ' + (tension ? 'rel-outlook-watch' : together ? 'rel-outlook-together' : '') +
+      '">' + tone + '</strong>' + (why ? '<p>' + esc(why) + '</p>' : '') +
+      (tension ? '<p><b>生活小建议</b>　' + esc(advice) + '</p>' : '') + '</div>';
+  }
+
   function palacesDiagram(chart) {
     var meanings = ['祖上与早年环境', '父母长辈与成长环境', '日主与伴侣宫', '子女与晚年'];
     var tiles = chart.pillars.map(function (p, i) {
       return '<div><h3>' + pillarNames[p.label] + '</h3><b>' + ganZhi(p.gz) + '</b><p>' + meanings[i] +
-        '</p><small>' + esc(p.nayin) + ' · ' + esc(chart.dayStages[i]) + '</small></div>';
+        '</p><small>' + esc(p.nayin) + ' · ' + esc(chart.dayStages[i]) + '</small>' + relationReading(chart, [p], palaceAdvice[i]) + '</div>';
     }).join('');
     return '<div class="palace-grid">' + tiles + '</div><div class="palace-extra">' +
       [['胎元', chart.taiYuan], ['命宫', chart.mingGong], ['身宫', chart.shenGong]].map(function (entry) {
         return '<div><span>' + entry[0] + '</span><b>' + ganZhi(entry[1]) + '</b></div>';
-      }).join('') + '</div><p class="tiny">宫位按传统四柱象意标注，可与六亲十神一起看。</p>';
+      }).join('') + '</div><p class="tiny">按各宫位所涉的合、冲、刑、害读盘。相合和牵制可以同时出现。</p>';
   }
 
   function kinDiagram(chart, gender) {
@@ -248,19 +292,20 @@
     ];
     var matches = [];
     chart.pillars.forEach(function (p) {
-      if (!p.isDay) matches.push({ label: p.label + '干', gan: p.gan, star: p.shiShenGan });
+      if (!p.isDay) matches.push({ pillar: p, label: p.label + '干', gan: p.gan, star: p.shiShenGan });
       p.hide.forEach(function (gan) {
-        matches.push({ label: p.label + '支藏', gan: gan, star: A.shiShen(chart.dayMaster.gan, gan) });
+        matches.push({ pillar: p, label: p.label + '支藏', gan: gan, star: A.shiShen(chart.dayMaster.gan, gan) });
       });
     });
     return '<div class="kin-hub"><b>' + element(chart.dayMaster.gan, chart.dayMaster.wx) +
-      '</b><small>以日主起六亲</small></div><div class="kin-grid">' + stars.map(function (entry) {
+      '</b><small>以日主起六亲</small></div><div class="kin-grid">' + stars.map(function (entry, i) {
         var found = matches.filter(function (m) { return entry[1].includes(m.star); });
+        var positions = Array.from(new Set(found.map(function (m) { return m.pillar; })));
         return '<article><h3>' + entry[0] + '</h3><small>' + entry[1].join(' · ') + '</small><p>' +
           (found.length ? found.map(function (m) {
             return '<span class="kin-hit">' + m.label + element(m.gan, A.GAN_WX[m.gan]) + '<small>' + m.star + '</small></span>';
-          }).join('') : '四柱与藏干未见该取象') + '</p></article>';
-      }).join('') + '</div><p class="tiny">按常见子平取象列出十神所在位置，六亲取法随流派而异。</p>';
+          }).join('') : '四柱与藏干未见该取象') + '</p>' + relationReading(chart, positions, kinAdvice[i]) + '</article>';
+      }).join('') + '</div><p class="tiny">按本版六亲取法查看十神落柱，再看这些柱的合与牵制。</p>';
   }
 
   function diagram(chart, tab, yun, year, gender) {

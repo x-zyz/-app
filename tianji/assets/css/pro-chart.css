@@ -193,3 +193,10 @@ body.pro-chart {
 .pillar-explain { width: 100%; min-height: 38px; text-decoration: underline dotted; text-underline-offset: 3px; }
 .p-row > div:has(.pillar-explain) { padding-block: 2px; }
 .classic-case blockquote { color: var(--text); }
+.rel-reading { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 7px; }
+.palace-grid .rel-reading { padding: 7px 0 0; border-radius: 0; }
+.rel-reading p { margin-top: 5px; overflow-wrap: anywhere; }
+.rel-reading p b { display: inline; font-size: inherit; }
+.rel-outlook { color: var(--text-2); font-size: 12px; }
+.rel-outlook-watch { color: var(--gold-hi); }
+.rel-outlook-together { color: var(--jade); }
