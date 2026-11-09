@@ -266,5 +266,10 @@ body.pro-chart {
 
 .pro-page .p-row > .p-stars { align-items: flex-start; padding: 3px 1px; }
 .pillar-star-list { display: grid; width: 100%; }
-.pillar-star { min-height: 44px; width: 100%; color: var(--gold-hi); font-size: 12px; line-height: 1.3; text-decoration: underline dotted; text-underline-offset: 3px; }
+.pillar-star { min-height: 36px; width: 100%; color: var(--gold-hi); font-size: clamp(11px, 3.1vw, 14px); line-height: 1.3; text-decoration: underline dotted; text-underline-offset: 3px; }
 .pillar-star-empty { padding: 12px 0; color: var(--text-3); }
+
+.pro-page .p-row:nth-child(even) > div:not(.d) { background: var(--ink-3); }
+.pro-page .p-row > .p-hide { align-items: flex-start; }
+.pillar-stack { display: grid; align-content: start; gap: 4px; min-width: 0; line-height: 1.5; font-size: 13px; }
+.pillar-stack span { white-space: nowrap; }

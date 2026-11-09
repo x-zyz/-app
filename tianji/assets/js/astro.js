@@ -213,7 +213,8 @@
       taiYuan: termsEC.getTaiYuan(),
       mingGong: termsEC.getMingGong(),
       shenGong: termsEC.getShenGong(),
-      shenSha: shenSha(pillars, dayGan, pillars[0].gan, pillars[0].zhi, pillars[1].zhi),
+      gender: birth.gender,
+      shenSha: shenSha(pillars, dayGan, pillars[0].gan, pillars[0].zhi, pillars[1].zhi, pillars, birth.gender),
       relations: relations(pillars),
       kong: xunKong(pillars[2].gz),
       changSheng: pillars.map(function (p) { return changSheng(p.gan, p.zhi); }),
@@ -396,7 +397,7 @@
     return [ZHI[(start + 10) % 12], ZHI[(start + 11) % 12]];
   }
 
-  function shenSha(pillars, dayGan, yearGan, yearZhi, monthZhi, natal) {
+  function shenSha(pillars, dayGan, yearGan, yearZhi, monthZhi, natal, gender) {
     natal = natal || pillars;
     var zs = pillars.map(function (p) { return p.zhi; });
     var gs = pillars.map(function (p) { return p.gan; });
@@ -418,13 +419,18 @@
       push(name, idxs, src + ' → 天干' + gans.join('、'));
     }
 
-    byZhi('天乙贵人', TIANYI[dayGan], '日干' + dayGan);
+    var fortune = {甲:'寅子', 乙:'丑卯', 丙:'寅子', 丁:'亥', 戊:'申', 己:'未', 庚:'午', 辛:'巳', 壬:'辰', 癸:'丑卯'};
+    [[yearGan, '年干'], [dayGan, '日干']].forEach(function (entry) {
+      var gan = entry[0], origin = entry[1] + gan;
+      byZhi('天乙贵人', TIANYI[gan], origin);
+      byZhi('太极贵人', TAIJI[gan], origin);
+      byZhi('福星贵人', fortune[gan].split(''), origin);
+    });
     byZhi('文昌贵人', [WENCHANG[dayGan]], '日干' + dayGan);
     byZhi('禄神', [LUSHEN[dayGan]], '日干' + dayGan);
     if (YANGREN[dayGan]) byZhi('羊刃', [YANGREN[dayGan]], '日干' + dayGan);
     byZhi('国印贵人', [GUOYIN[dayGan]], '日干' + dayGan);
     byZhi('金舆', [JINYU[dayGan]], '日干' + dayGan);
-    byZhi('太极贵人', TAIJI[dayGan], '日干' + dayGan);
 
     [yearZhi, natal[2].zhi].forEach(function (base, bi) {
       var src = (bi === 0 ? '年支' : '日支') + base;
@@ -450,19 +456,64 @@
     byZhi('孤辰', [GUCHEN[yearZhi]], '年支' + yearZhi);
     byZhi('寡宿', [GUASU[yearZhi]], '年支' + yearZhi);
 
+    var monthDe = YUEDE[monthZhi];
+    var deHe = GAN_HE.find(function (g) { return g.slice(0, 2).includes(monthDe); });
+    if (deHe) byGan('月德合', [deHe[0] === monthDe ? deHe[1] : deHe[0]], '月支' + monthZhi + '取月德' + monthDe + '，再取五合');
+
+    var dexiu = { 午:['丙丁','戊癸'], 子:['壬癸戊己','丙辛甲己'], 酉:['庚辛','乙庚'], 卯:['甲乙','丁壬'] };
+    var ds = dexiu[SANHE_GROUP[monthZhi]];
+    var compare = pillars === natal ? natal : natal.concat(pillars);
+    if (ds && ds.every(function (set) {
+      return compare.some(function (p) { return set.includes(p.gan); });
+    })) byGan('德秀贵人', Array.from(new Set((ds[0] + ds[1]).split(''))), '月支' + monthZhi + '，天干德' + ds[0] + '与秀' + ds[1] + '同时有见');
+
+    var red = {甲:'午',乙:'午',丙:'寅',丁:'未',戊:'子',己:'辰',庚:'戌',辛:'酉',壬:'巳',癸:'申'};
+    byZhi('红艳煞', [red[dayGan]], '日干' + dayGan + '，按《三命通会》卷三口径');
+    var blood = {寅:'丑',卯:'未',辰:'寅',巳:'申',午:'卯',未:'酉',申:'辰',酉:'戌',戌:'巳',亥:'亥',子:'午'};
+    if (blood[monthZhi]) byZhi('血刃', [blood[monthZhi]], '月支' + monthZhi + '，按《渊海子平》所载月例');
+    byZhi('六厄', [{子:'卯',午:'酉',卯:'午',酉:'子'}[SANHE_GROUP[yearZhi]]], '年支' + yearZhi + '三合五行之死位');
+
+    if (gender === 'm' || gender === 'f') {
+      var step = ((GAN.indexOf(yearGan) % 2 === 0) === (gender === 'm')) ? 1 : -1;
+      var yuan = ZHI[(ZHI.indexOf(yearZhi) + 6 + step) % 12];
+      byZhi('元辰', [yuan], '年柱' + yearGan + yearZhi + '，' + (step > 0 ? '阳男阴女' : '阴男阳女') + '，年支对冲后' + (step > 0 ? '顺' : '逆') + '取一位');
+    }
+
+    var yearTone = natal[0].nayin.slice(-1);
+    var tonePositions = {木:'亥寅',火:'寅巳',土:'申亥',金:'巳申',水:'申亥'};
+    if (tonePositions[yearTone]) {
+      ['学堂','词馆'].forEach(function (name, i) {
+        var branch = tonePositions[yearTone][i];
+        var matches = [];
+        pillars.forEach(function (p, j) {
+          var tone = L.LunarUtil.NAYIN[p.gan + p.zhi] || '';
+          if (p.zhi === branch && tone.endsWith(yearTone)) matches.push(j);
+        });
+        push(name, matches, '年柱纳音属' + yearTone + '，取' + (i ? '临官' : '长生') + branch + '，落柱纳音须同五行');
+      });
+    }
+
+    [['天罗','戌亥','火'], ['地网','辰巳','水土']].forEach(function (rule) {
+      if (rule[2].includes(yearTone) && rule[1].split('').every(function (z) {
+        return compare.some(function (p) { return p.zhi === z; });
+      })) byZhi(rule[0], rule[1].split(''), '年柱纳音属' + yearTone + '，地支同时见' + rule[1]);
+    });
+
     var kong = xunKong(natal[2].gz);
     var kidx = [];
     zs.forEach(function (z, i) { if (kong.indexOf(z) >= 0) kidx.push(i); });
     push('空亡', kidx, '日柱' + natal[2].gz + ' → 旬空' + kong.join('、'));
 
-    var order = ['天乙贵人', '天德贵人', '月德贵人', '文昌贵人', '太极贵人', '国印贵人', '禄神', '羊刃', '金舆', '桃花', '驿马', '华盖', '将星', '红鸾', '天喜', '孤辰', '寡宿', '空亡'];
+    var order = ['天乙贵人','太极贵人','福星贵人','天德贵人','月德贵人','月德合','德秀贵人',
+      '文昌贵人','国印贵人','学堂','词馆','禄神','金舆','桃花','红艳煞','红鸾','天喜','驿马','华盖','将星',
+      '羊刃','孤辰','寡宿','空亡','劫煞','灾煞','亡神','血刃','元辰','六厄','天罗','地网'];
     out.sort(function (a, b) { return order.indexOf(a.name) - order.indexOf(b.name); });
     return out;
   }
 
   function cycleStars(chart, gz) {
     var p = chart.pillars;
-    return shenSha([{ gan: gz[0], zhi: gz[1] }], p[2].gan, p[0].gan, p[0].zhi, p[1].zhi, p);
+    return shenSha([{ gan: gz[0], zhi: gz[1] }], p[2].gan, p[0].gan, p[0].zhi, p[1].zhi, p, chart.gender);
   }
 
   function relations(list) {
