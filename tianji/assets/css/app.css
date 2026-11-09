@@ -642,7 +642,6 @@ button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
 .tab-word { color: inherit; font-size: 12px; letter-spacing: 0; padding: 0; }
 .tab.active { color: var(--jade); background: #E7EEE5; font-weight: 700; }
 .mini-pillars .l, .mini-meta { font-size: 12px; letter-spacing: 0; }
-.mini-pillars .mp:nth-child(3) { background: #E7EEE5; }
 @media (max-width: 360px) {
   .yiji .col { padding-inline: 10px; }
   .quick { gap: 8px; }
