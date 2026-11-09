@@ -42,7 +42,10 @@ body {
 }
 .pro-chart .topbar { height: 58px; margin-bottom: 16px; }
 .pro-chart .topbar .seal { background: #8d463a; }
-.pro-chart .tab.active { color: var(--gold-hi); background: #35352a; }
+.tab.active { color: var(--gold-hi); background: #35352a; }
+.mini-pillars .mp:nth-child(3) { background: var(--ink-3); }
+.yiji .chip { color: var(--jade); background: #24382e; border-color: #3b594a; }
+.yiji .chip.bad { color: var(--red); background: #392a29; border-color: #65423d; }
 .pro-chart .btn { background: #d2ad73; border-color: #d2ad73; color: #20221b; }
 .pro-chart .btn.ghost { background: var(--ink-3); border-color: var(--line); color: var(--text); }
 .pro-chart .btn:focus-visible { outline-color: var(--gold); }
