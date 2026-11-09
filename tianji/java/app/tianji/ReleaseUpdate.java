@@ -11,7 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 final class ReleaseUpdate {
-    private static final String REPO = "x-zyz/-app";
+    private static final String REPO = "x-zyz/tianji-app";
     private static final String RELEASES = "https://github.com/" + REPO + "/releases/";
     private static final String API = "https://api.github.com/repos/" + REPO + "/releases/latest";
     private static final int MAX_RESPONSE_BYTES = 256 * 1024;
