@@ -13,7 +13,7 @@ import org.json.JSONObject;
 final class ReleaseUpdate {
     private static final String REPO = "x-zyz/tianji-app";
     private static final String RELEASES = "https://github.com/" + REPO + "/releases/";
-    private static final String API = "https://api.github.com/repos/" + REPO + "/releases/latest";
+    private static final String API = "https://api.github.com/repositories/1450272638/releases/latest";
     private static final int MAX_RESPONSE_BYTES = 256 * 1024;
 
     private ReleaseUpdate() {}
@@ -30,9 +30,12 @@ final class ReleaseUpdate {
             conn.setConnectTimeout(7000);
             conn.setReadTimeout(7000);
             conn.setInstanceFollowRedirects(false);
+            conn.setUseCaches(false);
+            conn.setRequestProperty("Cache-Control", "no-cache");
             conn.setRequestProperty("Accept", "application/vnd.github+json");
             conn.setRequestProperty("User-Agent", "Tianji-Android");
-            if (conn.getResponseCode() != 200) throw new IOException("Release request failed");
+            int status = conn.getResponseCode();
+            if (status != 200) throw new IOException("Release HTTP " + status);
             try (InputStream stream = conn.getInputStream()) {
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 byte[] buffer = new byte[4096];

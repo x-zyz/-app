@@ -167,6 +167,7 @@ public class MainActivity extends Activity {
                     response = new JSONObject().put("tag", release.getString("tag"))
                             .put("apk", release.getBoolean("apk")).toString();
                 } catch (IOException | JSONException e) {
+                    Log.w(TAG, "Release check failed", e);
                     response = "{\"error\":true}";
                 } finally {
                     checkingUpdate.set(false);
