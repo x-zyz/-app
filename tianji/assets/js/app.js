@@ -79,6 +79,7 @@
     if (!entry) return null;
     var day = todayKey();
     if (!state.daily || state.daily.day !== day || state.daily.id !== entry.id) {
+      state.daily = null;
       try {
         var chart = A.chart(entry.birth);
         state.daily = { day: day, id: entry.id, chart: chart, result: A.daily(chart, new Date(), entry.birth) };
@@ -164,16 +165,28 @@
   }
 
   function panSummaryHTML() {
-    var c = state.daily && ownRecord() ? state.daily.chart : null;
-    if (!c) return '';
+    var owner = ownRecord();
+    var cached = state.daily;
+    if (!owner || !cached || cached.id !== owner.id) return '';
+    var c = cached.chart;
+    var birth = owner.birth;
+    var hourBranch = A.ZHI_LABEL[c.solar.zhi] + '时';
+    var solarDate = c.solar.y + '.' + pad(c.solar.m) + '.' + pad(c.solar.d);
+    var when = solarDate + ' ' + hourBranch;
+    if (birth.city && c.corrected) {
+      var wallDate = birth.y + '.' + pad(birth.m) + '.' + pad(birth.d);
+      when = wallDate + ' · 钟表 ' + pad(birth.hour) + ':' + pad(birth.minute) +
+        ' · 真太阳时 ' + (solarDate === wallDate ? '' : solarDate + ' ') +
+        pad(c.corrected.hour) + ':' + pad(c.corrected.minute) + ' ' + hourBranch + ' · ' + esc(birth.city.name);
+    }
+    var zodiac = window.LunarUtil.SHENGXIAO[A.ZHI_LABEL.indexOf(c.pillars[0].zhi) + 1];
     var cells = c.pillars.map(function (p) {
       return '<div class="mp"><span class="l">' + p.label + '</span><span class="g">' + p.gan + p.zhi + '</span></div>';
     }).join('');
-    return '<div class="section"><div class="section-hd"><span class="t">命盘</span>' +
+    return '<div class="section"><div class="section-hd"><span class="t">本人命盘 · 出生四柱</span>' +
       '<span class="a">' + c.dayMaster.gan + c.dayMaster.wx + ' · ' + c.strength.label + '</span></div>' +
       '<div class="card" style="padding:0 0 4px"><div class="mini-pillars">' + cells + '</div>' +
-      '<div class="mini-meta">' + c.solar.y + '.' + pad(c.solar.m) + '.' + pad(c.solar.d) + ' ' +
-      A.ZHI_LABEL[c.solar.zhi] + '时 · ' + c.lunar.shengxiao + '年 · ' + c.xingzuo + '座</div></div></div>';
+      '<div class="mini-meta">' + when + ' · ' + zodiac + '年 · ' + c.xingzuo + '座</div></div></div>';
   }
 
   function heroHTML(d) {
@@ -479,14 +492,14 @@
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list">' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v2.5 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v2.6 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 2.5</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 2.6</p>' +
       '</div>';
   }
 
@@ -589,7 +602,7 @@
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v2.5</p>' +
+      '<p class="about-lead">天机 · v2.6</p>' +
       '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">所有推算均在本机完成，不联网、不上传，亦不申请任何敏感权限。</p>' +
       '<div class="divider"></div>' +
