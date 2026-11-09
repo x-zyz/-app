@@ -28,10 +28,10 @@ final class UpdateDownload {
         state = activity.getSharedPreferences("release-download", Context.MODE_PRIVATE);
     }
 
-    synchronized String start(String tag, JSONObject release) {
+    synchronized String start(String tag, JSONObject release, boolean restart) {
         if (release == null || !release.optBoolean("apk") || !release.optString("tag").equals(tag)) return "error";
         String progress = progress(tag);
-        if (!"none".equals(progress) && !"error".equals(progress)) return progress;
+        if ("ready".equals(progress) || (!restart && !"none".equals(progress) && !"error".equals(progress))) return progress;
         try {
             long previous = state.getLong("id", -1);
             if (previous >= 0) manager.remove(previous);
@@ -59,7 +59,7 @@ final class UpdateDownload {
             long done = row.getLong(row.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
             long size = state.getLong("size", 0);
             if (status == DownloadManager.STATUS_PAUSED) return "paused";
-            return size > 0 ? Long.toString(Math.min(99, done * 100 / size)) : "0";
+            return done == 0 ? "0" : Long.toString(Math.max(1, Math.min(99, done * 100 / size)));
         } catch (RuntimeException e) {
             return "error";
         }

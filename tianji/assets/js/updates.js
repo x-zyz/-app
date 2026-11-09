@@ -27,22 +27,32 @@
 
   function open(openSheet) {
     var native = root.Android;
-    var current = native && native.appVersion ? native.appVersion() : '3.6';
+    var current = native && native.appVersion ? native.appVersion() : '3.7';
     openSheet('<div class="sheet-hd"><span class="t">检查更新</span>' +
       '<button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
       '<p class="about-p" data-update-status role="status"></p>' +
       '<div class="sheet-actions"><button class="btn" data-update-retry hidden>重试</button>' +
-      '<button class="btn" data-update-download hidden></button></div>', function (mask) {
+      '<button class="btn" data-update-download hidden></button>' +
+      '<button class="btn ghost" data-update-browser hidden>打开发布页</button></div>', function (mask) {
       var status = mask.querySelector('[data-update-status]');
       var retry = mask.querySelector('[data-update-retry]');
       var download = mask.querySelector('[data-update-download]');
+      var browser = mask.querySelector('[data-update-browser]');
+      browser.addEventListener('click', function () { if (latest) native.openUpdate(latest.tag); });
       var latest = null;
+      var lastProgress, progressSince, restart = false;
       var timer;
       function watch(progress) {
         clearTimeout(timer);
         if (!mask.isConnected) return;
-        if (progress === 'error') {
-          status.textContent = '下载未完成，请重试。';
+        if (progress !== lastProgress) {
+          lastProgress = progress;
+          progressSince = Date.now();
+        }
+        var stalled = progress !== 'ready' && progress !== 'none' && Date.now() - progressSince >= 20000;
+        if (progress === 'error' || stalled) {
+          restart = true;
+          status.textContent = stalled ? '下载长时间没有进展。可以重新下载，或打开发布页手动下载。' : '下载未完成。可以重新下载，或打开发布页手动下载。';
           download.textContent = '重新下载';
           download.disabled = false;
         } else if (progress === 'ready') {
@@ -79,12 +89,16 @@
           }};
           native.installUpdate(id, latest.tag);
         } else {
-          watch(native.downloadUpdate(latest.tag));
+          var progress = native.downloadUpdate(latest.tag, restart);
+          restart = false;
+          lastProgress = null;
+          watch(progress);
         }
       });
       function check() {
         retry.hidden = true;
         download.hidden = true;
+        browser.hidden = true;
         status.textContent = '当前版本 ' + current + '。正在检查…';
         if (!native || !native.checkForUpdate) {
           status.textContent = '请在天机 Android 应用中检查更新。';
@@ -102,7 +116,10 @@
             status.textContent = '当前版本 ' + current + '，发现新版 ' + result.tag + '。';
             download.textContent = result.apk ? '下载更新' : '打开 GitHub 发布页';
             download.hidden = false;
-            if (result.apk) watch(native.updateProgress(result.tag));
+            if (result.apk) {
+              browser.hidden = false;
+              watch(native.updateProgress(result.tag));
+            }
           } else {
             status.textContent = '当前版本 ' + current + (order === 0 ? '，已是最新正式版。' : '，已高于 GitHub 最新正式版 ' + result.tag + '。');
           }

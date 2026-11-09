@@ -187,7 +187,7 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public String downloadUpdate(String tag) { return downloads.start(tag, latestRelease); }
+        public String downloadUpdate(String tag, boolean restart) { return downloads.start(tag, latestRelease, restart); }
 
         @JavascriptInterface
         public String updateProgress(String tag) { return downloads.progress(tag); }
