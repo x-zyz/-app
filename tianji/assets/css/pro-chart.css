@@ -14,6 +14,8 @@ body {
   --ink: #141716;
   --ink-2: #1d2220;
   --ink-3: #272d2a;
+  --nav-surface: #171e23;
+  --nav-selection: #37352d;
   --line: #303934;
   --gold: #e2be83;
   --gold-hi: #f6d49b;
@@ -42,7 +44,25 @@ body {
 }
 .pro-chart .topbar { height: 58px; margin-bottom: 16px; }
 .pro-chart .topbar .seal { background: #8d463a; }
-.tab.active { color: var(--gold-hi); background: #35352a; }
+.tabbar {
+  width: min(calc(100% - 16px), 584px);
+  bottom: calc(8px + var(--sab));
+  padding: 5px;
+  gap: 2px;
+  background: var(--nav-surface);
+  border: 1px solid var(--gold-line);
+  border-radius: 24px;
+}
+.tab { min-width: 0; min-height: 54px; border-radius: 18px; }
+.tab.active { color: var(--gold-hi); background: var(--nav-selection); }
+.tab.active svg { stroke-width: 2.1; }
+.tab-word { font-size: 0.75rem; }
+.sheet { overscroll-behavior: contain; border-radius: 24px 24px 0 0; }
+.sheet .explain-section p, .sheet .lore-details p, .learn-body { font-size: 1rem; line-height: 1.7; }
+@media (prefers-reduced-motion: reduce) {
+  .page, .page *, .sheet-mask, .sheet-mask * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .tap:active { transform: none; }
+}
 .yiji .chip { color: var(--jade); background: #24382e; border-color: #3b594a; }
 .yiji .chip.bad { color: var(--red); background: #392a29; border-color: #65423d; }
 .pro-chart .btn { background: #d2ad73; border-color: #d2ad73; color: #20221b; }
@@ -313,3 +333,4 @@ body::before {
 .useful-elements h3 { color: var(--gold-hi); font-size: 15px; }
 .useful-elements h3 small { color: var(--text-3); font-size: 11px; font-weight: normal; }
 .useful-elements p { margin-top: 5px; line-height: 1.65; color: var(--text-2); font-size: 13px; }
+.pillar-star, .ln-column-stars .pillar-star { min-height: 44px; }

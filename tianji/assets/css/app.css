@@ -14,7 +14,7 @@
   --red: #9B3D34;
   --line: #E5DED0;
   --serif: "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif;
-  --sans: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", sans-serif;
+  --sans: system-ui, "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", sans-serif;
   --sat: 0px;
   --sab: 0px;
 }
@@ -415,7 +415,6 @@ h1, h2, h3, p { margin: 0; }
   align-items: center; justify-content: center; gap: 3px; transition: background .25s;
 }
 .tab-word { padding-left: .22em; transition: color .25s; }
-.tab.active .tab.active .tab-word { color: var(--gold); }
 
 /* 首页命盘摘要 */
 .mini-pillars { display: flex; }
@@ -510,7 +509,7 @@ h1, h2, h3, p { margin: 0; }
 body { font-size: 15px; }
 button { cursor: pointer; }
 button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
-.shell { max-width: 600px; padding-inline: clamp(14px, 4vw, 26px); }
+.shell { max-width: 600px; padding-inline: clamp(16px, 4vw, 26px); }
 .topbar { height: 68px; border-bottom: 1px solid var(--gold-line); margin-bottom: 20px; }
 .brand { gap: 9px; }
 .seal {
@@ -524,13 +523,13 @@ button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
 .view { padding-top: 0; }
 .page { animation-duration: .22s; }
 .page-heading { margin-bottom: 16px; }
-.page-heading p { margin-top: 5px; color: var(--text-3); font-size: 13px; }
-.h1 { font-size: clamp(27px, 6vw, 36px); font-weight: 600; letter-spacing: .04em; }
+.page-heading p { margin-top: 6px; color: var(--text-2); font-size: 0.9375rem; line-height: 1.55; }
+.h1 { font-size: clamp(1.75rem, 6vw, 2.25rem); font-weight: 700; line-height: 1.2; letter-spacing: .02em; }
 .section { margin-top: 24px; }
 .section-hd { gap: 8px; margin-bottom: 9px; }
 .section-hd .t { font-size: 19px; font-weight: 600; color: var(--text); letter-spacing: .05em; }
 .section-hd .a { font-size: 12px; letter-spacing: 0; text-align: right; }
-.card { background: var(--ink-2); border-radius: 15px; box-shadow: none; }
+.card { background: var(--ink-2); border-radius: 18px; box-shadow: none; }
 .card::after, .corner { display: none; }
 .eyebrow, .tiny { font-size: 12px; letter-spacing: .03em; }
 .btn {
@@ -612,7 +611,7 @@ button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
 .draw-stage { width: 100%; padding: 24px 12px; border-radius: 15px; background: var(--ink-2); border: 1px solid var(--gold-line); }
 .tube { margin-bottom: 25px; }
 .result-no, .result-lv, .me-stat .k, .me-sub { font-size: 12px; letter-spacing: .03em; }
-.ci, .jie, .about-p { font-size: 14px; }
+.ci, .jie, .about-p { font-size: 1rem; line-height: 1.65; }
 .list-row { width: 100%; min-height: 48px; text-align: left; }
 .list-row.danger { color: var(--red); }
 .switch { flex: none; background: #D8D6CA; }
@@ -625,9 +624,9 @@ button:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
   box-shadow: 0 -12px 32px rgba(20, 38, 29, .17);
   padding-inline: clamp(14px, 4vw, 24px);
 }
-.sheet-hd { margin-bottom: 12px; }
-.sheet-hd .t { font-size: 21px; letter-spacing: .04em; }
-.sheet-hd .x { width: 44px; height: 44px; border-radius: 50%; background: var(--ink-3); }
+.sheet-hd { gap: 12px; margin-bottom: 14px; }
+.sheet-hd .t { min-width: 0; overflow-wrap: anywhere; font-size: 1.25rem; line-height: 1.35; }
+.sheet-hd .x { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; background: var(--ink-3); }
 .field > .lab, .date-pick .h, .zhi-grid button .h { font-size: 12px; letter-spacing: 0; }
 .date-pick, .seg button, .zhi-grid button { min-height: 48px; border-color: var(--gold-line); background: var(--ink); }
 .seg button.on, .zhi-grid button.on { background: #E7EEE5; border-color: #5F816F; color: var(--jade); }
