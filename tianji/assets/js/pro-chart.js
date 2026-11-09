@@ -87,6 +87,20 @@
       }).join('') + '</ul></details></section>';
   }
 
+  function usefulElements(chart) {
+    var value = window.TianjiUseful.analyze(chart);
+    return '<section class="section"><div class="section-hd"><h2 class="t">调候与喜用神</h2></div>' +
+      '<div class="card useful-elements"><article><h3>调候用神参考 <small>' + esc(value.source) + '</small></h3><p>' +
+      esc(value.note) + '</p>' + value.stems.map(function (item) {
+        return '<p>' + element(item.gan + A.GAN_WX[item.gan], A.GAN_WX[item.gan]) + ' · ' + esc(item.evidence) + '</p>';
+      }).join('') + '</article><article><h3>喜用神参考 <small>扶抑简化取法</small></h3>' +
+      '<p><b>用神方向：</b>' + (value.first ? element(value.first,value.first) : '线索不足，暂不单列') + '</p>' +
+      '<p><b>喜神方向：</b>' + (value.helpful.length ? value.helpful.map(function (wx) { return element(wx,wx); }).join('、') : '暂未单列') +
+      '</p><p>' + esc(value.strength + '。' + value.why + '。') + '</p>' +
+      (value.overlap.length ? '<p>需复核：' + esc(value.overlap.join('、')) + '同时出现在生扶或取用与制衡线索中，暂不列入建议。</p>' : '') +
+      '<p class="tiny">调候看寒暖燥湿，扶抑看日主的生扶与泄耗，两栏分别读。</p></article></div></section>';
+  }
+
   function cycleSummary(year, yun) {
     if (!year || !yun) return '出生排盘可在下方点选岁运查看对应关系。';
     var links = year.rels.concat(year.yunRel).slice(0, 3).map(function (rel) {
@@ -329,6 +343,6 @@
 
   root.TianjiProChart = {
     element: element, ganZhi: ganZhi, birthSummary: birthSummary,
-    overview: overview, cycleSummary: cycleSummary, lifestyle: lifestyle, readings: readings, diagram: diagram
+    overview: overview, usefulElements: usefulElements, cycleSummary: cycleSummary, lifestyle: lifestyle, readings: readings, diagram: diagram
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -9,7 +9,7 @@
 }
 
 html.pro-background { background: #141716; }
-body.pro-chart {
+body {
   color-scheme: dark;
   --ink: #141716;
   --ink-2: #1d2220;
@@ -292,3 +292,22 @@ body.pro-chart {
 .ln-column .ln { width: 100%; border-radius: 8px 8px 0 0; }
 .ln-column-stars { display: grid; text-align: center; padding: 3px; }
 .ln-column-stars .pillar-star { min-height: 34px; font-size: 12px; }
+
+html, html.pro-background { background: #101629; }
+body { background: transparent; }
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url('../img/stars.svg') center top / 460px 640px repeat,
+    radial-gradient(ellipse at 82% 10%, #293151 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 70%, #1c2942 0%, transparent 56%), #101629;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: var(--sat);
+  z-index: 25; pointer-events: none; background: #101629;
+}
+.useful-elements { padding-block: 4px; }
+.useful-elements article { padding: 12px 0; }
+.useful-elements article + article { border-top: 1px solid var(--line); }
+.useful-elements h3 { color: var(--gold-hi); font-size: 15px; }
+.useful-elements h3 small { color: var(--text-3); font-size: 11px; font-weight: normal; }
+.useful-elements p { margin-top: 5px; line-height: 1.65; color: var(--text-2); font-size: 13px; }
