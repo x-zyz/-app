@@ -17,6 +17,7 @@
   var state = {
     tab: 'home',
     birth: null,
+    starMode: 'all',
     records: { entries: [], own: null, active: null },
     chart: null,
     daily: null,
@@ -318,7 +319,7 @@
       row('p-cs', Notes.label('seat'), function (x, i) { return Notes.cell(c, i, 'seat'); }) +
       row('p-cs', Notes.label('void'), function (x, i) { return Notes.cell(c, i, 'void'); }) +
       row('p-nayin', Notes.label('tone'), function (x, i) { return Notes.cell(c, i, 'tone'); }) +
-      row('p-stars', '神煞', function (x, i) { return Lore.pillarStars(c.shenSha, i); });
+      row('p-stars', '神煞', function (x, i) { return Lore.pillarStars(c.shenSha, i, state.starMode); });
 
     var yunIdx = pickYunIndex(c);
     var yun = c.yun && c.yun.list[yunIdx];
@@ -342,7 +343,7 @@
             '<span class="g">' + Pro.ganZhi(y.gz) + '</span><span class="ss">' + y.ss + '</span>' +
             '<span class="a">' + y.start + '–' + y.end + '</span></button>';
         }).join('') + '</div>' +
-        yunRelHtml + Lore.group('大运神煞', yun.gz + ' · ' + yun.start + '–' + yun.end, A.cycleStars(c, yun.gz), 'yun') + '</div>';
+        yunRelHtml + Lore.group('大运神煞', yun.gz + ' · ' + yun.start + '–' + yun.end, A.cycleStars(c, yun.gz), 'yun', null, state.starMode) + '</div>';
     }
 
     var lnHtml = '';
@@ -368,6 +369,10 @@
       Pro.overview(result, c) + Pro.birthSummary(state.birth, c) +
       '<section class="section"><div class="section-hd"><h2 class="t">四柱命盘</h2>' +
       '<span class="a">' + c.dayMaster.gan + c.dayMaster.wx + '日主 · ' + c.strength.label + '</span></div>' +
+      '<div class="star-filter" aria-label="神煞显示范围">' +
+      [['common','常用神煞'],['all','全部神煞']].map(function (item) {
+        return '<button data-star-mode="' + item[0] + '" aria-pressed="' + (state.starMode === item[0]) + '">' + item[1] + '</button>';
+      }).join('') + '</div>' +
       '<div class="card pillar-card"><div class="pillars">' + pillars + '</div></div>' +
       '<div class="pro-wx-legend">' + A.WX_ORDER.map(function (wx) { return Pro.element(wx, wx); }).join('') + '</div></section>' +
       yunHtml + lnHtml + '<div id="year-stars"></div>' +
@@ -472,14 +477,14 @@
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list">' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v2.2 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v2.3 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 2.2</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 2.3</p>' +
       '</div>';
   }
 
@@ -498,7 +503,7 @@
       if (!yun) return;
       var year = clamp(state.diagramYear || new Date().getFullYear(), yun.start, yun.end);
       var ln = A.liunian(chart, year, index);
-      yearStars.innerHTML = Lore.group('流年神煞', year + '年 · ' + ln.gz, A.cycleStars(chart, ln.gz), 'year', year);
+      yearStars.innerHTML = Lore.group('流年神煞', year + '年 · ' + ln.gz, A.cycleStars(chart, ln.gz), 'year', year, state.starMode);
     }
   }
 
@@ -576,7 +581,7 @@
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v2.2</p>' +
+      '<p class="about-lead">天机 · v2.3</p>' +
       '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">所有推算均在本机完成，不联网、不上传，亦不申请任何敏感权限。</p>' +
       '<div class="divider"></div>' +
@@ -623,7 +628,7 @@
       '<div class="field" style="margin-top:16px"><div class="lab">与命局</div><div class="rel-wrap">' +
       relChips(ln.rels, '与命局无冲无合') + '</div></div>' +
       '<div class="field"><div class="lab">与大运</div><div class="rel-wrap">' + yunChips + '</div></div>' +
-      Lore.group('流年神煞', yearVal + '年 · ' + ln.gz, A.cycleStars(c, ln.gz), 'year', yearVal) +
+      Lore.group('流年神煞', yearVal + '年 · ' + ln.gz, A.cycleStars(c, ln.gz), 'year', yearVal, state.starMode) +
       (ln.note ? '<p class="about-p" style="margin-top:4px">' + ln.note + '</p>' : '') +
       '<div class="sheet-actions" style="margin-top:14px"><button class="btn" data-act="close-sheet" style="flex:1">关 闭</button></div>'
     );
@@ -731,6 +736,15 @@
       var note = e.target.closest('[data-pillar-note]');
       if (note) {
         openSheet(Notes.detail(getChart(), +note.dataset.pillarIndex, note.dataset.pillarNote));
+        return;
+      }
+
+      var starMode = e.target.closest('[data-star-mode]');
+      if (starMode) {
+        state.starMode = starMode.dataset.starMode;
+        store('tj.starMode', state.starMode);
+        render();
+        $('[data-star-mode="' + state.starMode + '"]').focus({preventScroll:true});
         return;
       }
 
@@ -842,6 +856,7 @@
     }
     var active = state.records.entries.find(function (entry) { return entry.id === state.records.active; });
     state.birth = active ? active.birth : null;
+    state.starMode = store('tj.starMode') === 'common' ? 'common' : 'all';
     var pref = store(K_PREF);
     if (pref) state.pref = pref;
     state.draw = loadDraw();

@@ -278,3 +278,8 @@ body.pro-chart {
   width: 100%; min-height: 44px; font-size: 12px; color: var(--gold-hi);
   text-decoration: underline dotted; text-underline-offset: 3px;
 }
+
+.star-filter { display: flex; gap: 6px; margin: 0 0 8px; }
+.star-filter button { min-height: 44px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--text-2); font-size: 12px; }
+.star-filter button[aria-pressed=true] { color: var(--gold-hi); background: var(--ink-3); }
+.pillar-star { white-space: normal; overflow-wrap: anywhere; }

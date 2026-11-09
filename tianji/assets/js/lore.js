@@ -4,40 +4,11 @@
   'use strict';
   var A = window.Astro;
   var names = { 年:'年柱', 月:'月柱', 日:'日柱', 时:'时柱', 运:'大运', 流:'流年' };
-  var meanings = {
-    福星贵人:'采用《五行精纪》卷十三口诀，以年干、日干查地支，古法取福禄、助益之象。',
-    月德合:'由月支取月德天干，再查与该干五合的天干。古法用于观察调和、协作的取象。',
-    德秀贵人:'按月支三合组分德干与秀干，二者都见于天干时标注对应落点。传统取文秀、学习之象。',
-    红艳煞:'本版用《三命通会》卷三的日干查支表，传统多取情感表达、人际吸引之象。',
-    血刃:'本版按《渊海子平》所载月例查地支。不同版本取法有别，可结合落柱和冲刑看其传统取象。',
-    六厄:'查本命年支所属三合五行的死位。古法用作观察阻力的辅助线索。',
-    元辰:'本版以年支的对冲支为起点，依年干阴阳和乾坤顺取或逆取一支。古法多取牵制、变动之象。',
-    学堂:'用年柱纳音查长生位，落柱纳音也须同五行。古法多取学习、专研之象。',
-    词馆:'用年柱纳音查临官位，落柱纳音也须同五行。古法多取文字、文书、表达之象。',
-    天罗:'本版用年柱火纳音且地支戌亥互见的口径，古法取受约束之象。',
-    地网:'本版用年柱水土纳音且地支辰巳互见的口径，古法取受约束之象。',
-    天乙贵人:'古法用它标记容易得到协助、提携的取象，常和落柱的十神一起看。',
-    天德贵人:'按月支起查，古法用作宽缓、解纷的辅助线索。',
-    月德贵人:'按月支的三合组取天干，古法常用于观察协力、缓和。',
-    文昌贵人:'常取学习、文书、表达、技艺之象，可对照落柱的印星和食伤。',
-    国印贵人:'传统取印信、规范、职责之象，读盘时可与官印的位置对照。',
-    太极贵人:'传统常取对学问、义理和思考的兴趣之象。',
-    禄神:'日干的临官地支，传统看作日干在地支的一处根气。',
-    羊刃:'本版采用阳干取刃法。传统用来观察旺极、刚决和制衡，先看日主与全局。',
-    金舆:'传统以车舆比喻便利、供养和生活条件。',
-    桃花:'又称咸池，传统用来看社交、审美和吸引力的取象。',
-    驿马:'传统取移动、往来、调动和迁移之象，可看该支是否被合冲。',
-    华盖:'传统多取独处、专注、艺术与学问之象。',
-    将星:'传统取组织、统领、承担职责之象。',
-    红鸾:'按本命年支起查，传统取喜庆、关系和人际往来之象。',
-    天喜:'在红鸾对支，传统多取喜庆、聚会和人际互动之象。',
-    孤辰:'按年支所在的三会组起查，古法常取独立、少依赖之象。',
-    寡宿:'按年支所在的三会组起查，传统取偏静、独处之象。名称源于古法术语。',
-    空亡:'六十甲子每旬十日，有两个地支未配到天干，称为旬空。本版以本命日柱起查。',
-    劫煞:'按年支、日支的三合组起查。古法取资源争夺或变化之象。',
-    灾煞:'按三合旺支的对冲支查得。古法用作复核冲动与牵制的辅助标记。',
-    亡神:'按年支、日支的三合组起查。古法取心思、谋划或耗散之象。'
-  };
+  var Stars = window.TianjiStars;
+  function isVisible(hit, mode) {
+    return mode !== 'common' || Stars.byId(hit.id).common;
+  }
+
   var notes = {
     天干:'古书依日干的阴阳五行分别说明其性质。读具体命盘时，还要看这个日干生于何月、四柱如何生扶或制约。',
     月令:'月令像一座房屋的总纲。月支藏干中当令的气，就像决定房屋朝向的因素，应先辨清它。',
@@ -85,10 +56,10 @@
       esc(source.url) + '</p></details>';
   }
 
-  function group(title, subtitle, hits, scope, year) {
+  function group(title, subtitle, hits, scope, year, mode) {
     var seen = new Set();
     var buttons = hits.map(function (hit, i) {
-      if (seen.has(hit.name)) return '';
+      if (!isVisible(hit, mode) || seen.has(hit.name)) return '';
       seen.add(hit.name);
       var pillars = scope === 'natal' ? Array.from(new Set(hits.filter(function (h) {
         return h.name === hit.name;
@@ -102,10 +73,10 @@
       (buttons || '<span class="tiny">按本版取法，这一组无命中。</span>') + '</div></section>';
   }
 
-  function pillarStars(hits, index) {
+  function pillarStars(hits, index, mode) {
     var seen = new Set();
     var buttons = hits.map(function (hit, i) {
-      if (!hit.pillars.includes(index) || seen.has(hit.name)) return '';
+      if (!isVisible(hit, mode) || !hit.pillars.includes(index) || seen.has(hit.name)) return '';
       seen.add(hit.name);
       return '<button class="pillar-star" data-star="' + i + '" data-scope="natal" data-star-pillar="' +
         index + '" aria-label="' + '年月日时'[index] + '柱神煞 ' + esc(hit.name) + '">' + esc(hit.name) + '</button>';
@@ -114,6 +85,7 @@
   }
 
   function detail(chart, name, scope, cycle, hits, pillarIndex) {
+    var rule = Stars.byName(name);
     var natal = chart.pillars;
     var all = natal.slice();
     if (cycle) all.push({ label: scope === 'yun' ? '运' : '流', gan: cycle.gz[0], zhi: cycle.gz[1], gz: cycle.gz });
@@ -146,14 +118,16 @@
       '</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
       '<div class="explain-body">' +
       section('本盘提要', locations.map(function (i) { return names[all[i].label] + all[i].gz; }).join('、') + '见' + name + '。') +
-      section('传统含义', meanings[name] || '传统命理中的辅助取象。') +
+      section('传统含义', rule.description) +
       (name === '天乙贵人' ? reader('《三命通会》卷三 · 论天乙贵人',
         '其神最尊貴，所至之處，一切凶煞隱然而避。',
         '书中把天乙比作尊贵的护助之神，遇到它时，古人会留意是否有缓和、助力的条件。') : '') +
       '<div class="lore-details"><h3>查法与本盘联动</h3>' + rows + '</div></div>' +
       (cycle && natalHits.length ? '<p class="about-p">本命同名神煞：' +
         natalHits.map(function (i) { return names[natal[i].label] + natal[i].gz; }).join('、') + '。</p>' : '') +
-      '<p class="tiny">神煞按本命起查，作为读盘辅助，结合月令、十神与干支关系理解。</p>';
+      section('规则与出处', rule.category + ' · ' + rule.version + '。' + rule.reference +
+        (rule.aliases.length ? '。别名：' + rule.aliases.join('、') : '')) +
+      '<details><summary>查看来源地址</summary><p class="pro-source">' + esc(rule.source) + '</p></details>';
   }
 
   window.TianjiLore = { reader:reader, section:section, read:read, group:group, pillarStars:pillarStars, detail:detail };
