@@ -27,7 +27,7 @@
 
   function open(openSheet) {
     var native = root.Android;
-    var current = native && native.appVersion ? native.appVersion() : '3.8';
+    var current = native && native.appVersion ? native.appVersion() : '3.9';
     openSheet('<div class="sheet-hd"><span class="t">检查更新</span>' +
       '<button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
       '<p class="about-p" data-update-status role="status"></p>' +

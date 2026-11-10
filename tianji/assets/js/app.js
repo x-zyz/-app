@@ -387,6 +387,7 @@
         Lore.group('大运神煞', yun.gz + ' · ' + yun.start + '–' + yun.end, A.cycleStars(c, yun.gz), 'yun', null, state.starMode) : '') +
       '<div id="year-stars"></div>' +
       '<section class="section pro-diagram" id="chart-diagram"></section>' +
+      '<div class="section"><button class="btn ghost" data-act="ai-prompt">生成 AI 提示词</button></div>' +
       Pro.usefulElements(c) + Pro.lifestyle(result) +
       Pro.readings(result, c) + '</div>';
   }
@@ -488,14 +489,14 @@
       '<div class="list">' +
       '<button class="list-row" data-act="toggle-vibrate" role="switch" aria-checked="' + state.pref.vibrate + '"><span>震动反馈</span><span aria-hidden="true" class="switch ' + (state.pref.vibrate ? 'on' : '') + '"></span></button>' +
       '<button class="list-row tap" data-act="check-update"><span>检查更新</span><span class="v">GitHub <span class="arrow">›</span></span></button>' +
-      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v3.8 <span class="arrow">›</span></span></button>' +
+      '<button class="list-row tap" data-act="about"><span>关于天机</span><span class="v">v3.9 <span class="arrow">›</span></span></button>' +
       '</div></div></div>' +
       '<div class="section"><div class="card" style="padding:2px 16px">' +
       '<div class="list"><button class="list-row tap danger" data-act="clear-all"><span>清除记录</span><span class="v">生辰 · 签</span></button>' +
       '</div></div></div>' +
       '<p class="disclaimer" style="margin-top:26px">天机以传统历法与子平法推演，仅作文化娱乐与自我观照之用，不构成任何决策依据。命由己造，相由心生。</p>' +
       '<div class="me-foot"><span class="seal seal-lg">天机</span></div>' +
-      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 3.8</p>' +
+      '<p class="tiny" style="text-align:center;margin-top:14px;letter-spacing:.34em">天机 · 3.9</p>' +
       '</div>';
   }
 
@@ -599,10 +600,55 @@
 
   function closeAllSheets() { while (sheetStack.length) closeSheet(); }
 
+  function aiPromptSheet(chart) {
+    var lines = [
+      '请按传统子平八字的框架分析以下命盘。四柱已由天机排出，请以四柱为准。',
+      '日主：' + chart.dayMaster.gan + chart.dayMaster.wx + '；月令：' + chart.pillars[1].zhi +
+        (chart.gender === 'm' ? '；乾造' : chart.gender === 'f' ? '；坤造' : ''),
+      '【四柱、十神与藏干】'
+    ];
+    chart.pillars.forEach(function (p) {
+      lines.push(p.label + '柱 ' + p.gz + '（' + p.shiShenGan + '）；藏干：' +
+        p.hide.map(function (gan, i) { return gan + ' ' + p.shiShenZhi[i]; }).join('、'));
+    });
+    lines.push('【应用参考】', '五行加权占比：' + A.WX_ORDER.map(function (wx) {
+      return wx + ' ' + chart.pct[wx] + '%';
+    }).join('、'), '应用旺衰初判：' + chart.strength.label,
+    '应用识别的干支关系：' + (chart.relations.map(function (r) {
+      return (r.pair ? r.pair + '柱 ' : '') + r.text;
+    }).join('；') || '无已识别项'));
+    if (chart.yun && chart.yun.list.length) {
+      lines.push('【大运】' + chart.yun.list.map(function (y) {
+        return y.gz + '（' + y.start + '–' + y.end + '年）';
+      }).join('、'));
+    }
+    lines.push('', '请依次说明月令与旺衰、透干与通根、刑冲合害、格局是否有足够依据、喜忌与调候，并说明大运如何与原局互动。逐条列出盘面依据、不同流派的分歧和不能确认的条件。应用初判仅供参考。请把命理解读作为传统观点呈现，避免断言具体事件或引用无法核实的古籍。');
+    var prompt = lines.join('\n');
+    openSheet('<div class="sheet-hd"><span class="t">AI 八字分析提示词</span>' +
+      '<button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
+      '<p class="tiny">提示词在本机生成。复制后可粘贴到你使用的 AI。</p>' +
+      '<textarea class="ai-prompt-text" aria-label="AI 提示词正文" readonly></textarea>' +
+      '<div class="sheet-actions"><button class="btn" data-copy-ai>复制提示词</button></div>' +
+      '<p class="tiny" data-ai-copy-status role="status"></p>', function (mask) {
+        var preview = $('.ai-prompt-text', mask);
+        var status = $('[data-ai-copy-status]', mask);
+        preview.value = prompt;
+        $('[data-copy-ai]', mask).addEventListener('click', function () {
+          var copied = window.Android && Android.copyText && Android.copyText(prompt);
+          if (!copied) {
+            preview.focus();
+            preview.select();
+            copied = document.execCommand('copy');
+          }
+          status.textContent = copied ? '已复制提示词' : '已选中文本，请长按复制';
+        });
+      });
+  }
+
   function aboutSheet() {
     openSheet(
       '<div class="sheet-hd"><span class="t">关于天机</span><button class="x" data-act="close-sheet" aria-label="关闭">×</button></div>' +
-      '<p class="about-lead">天机 · v3.8</p>' +
+      '<p class="about-lead">天机 · v3.9</p>' +
       '<p class="about-p">命盘以出生地真太阳时取日、时柱，以实际出生瞬间对照节气取年、月柱；日运取当日干支与日主之十神生克，辅以五行喜忌推演。求签取六十四卦，卦辞、解签俱在本地。</p>' +
       '<p class="about-p">排盘与记录在本机处理。手动检查更新时只向 GitHub 查询公开版本，不上传生辰资料。</p>' +
       '<div class="divider"></div>' +
@@ -847,6 +893,7 @@
       if (!act) return;
       var a = act.dataset.act;
 
+      if (a === 'ai-prompt') { var currentChart = getChart(); if (currentChart) aiPromptSheet(currentChart); return; }
       if (a === 'calendar') { window.TianjiCalendar.open(openSheet); return; }
       if (a === 'open-birth') { haptic(8); openBirthSheet(state.birth); }
       if (a === 'new-birth') { haptic(8); openBirthSheet(null); }

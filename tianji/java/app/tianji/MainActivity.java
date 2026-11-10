@@ -3,6 +3,8 @@ package app.tianji;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -266,6 +268,19 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {
                 }
             });
+        }
+
+        @JavascriptInterface
+        public boolean copyText(String text) {
+            if (text == null || text.isEmpty() || text.length() > 12000) return false;
+            try {
+                ClipboardManager clipboard = getSystemService(ClipboardManager.class);
+                if (clipboard == null) return false;
+                clipboard.setPrimaryClip(ClipData.newPlainText("Tianji AI prompt", text));
+                return true;
+            } catch (RuntimeException e) {
+                return false;
+            }
         }
 
         @JavascriptInterface
