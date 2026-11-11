@@ -298,10 +298,13 @@
 
   function kinDiagram(chart, gender) {
     var stars = [
-      ['父亲', ['偏财']], ['母亲', ['正印']], ['兄弟姐妹', ['比肩', '劫财']],
+      ['父亲', ['偏财']], ['母亲', ['正印']], ['兄弟姐妹', ['比肩', '劫财']]
+    ];
+    var hasGender = gender === 'm' || gender === 'f';
+    if (hasGender) stars.push(
       [gender === 'f' ? '伴侣 · 坤造' : '伴侣 · 乾造', gender === 'f' ? ['正官', '七杀'] : ['正财', '偏财']],
       ['子女', gender === 'f' ? ['食神', '伤官'] : ['正官', '七杀']]
-    ];
+    );
     var matches = [];
     chart.pillars.forEach(function (p) {
       if (!p.isDay) matches.push({ pillar: p, label: p.label + '干', gan: p.gan, star: p.shiShenGan });
@@ -317,7 +320,8 @@
           (found.length ? found.map(function (m) {
             return '<span class="kin-hit">' + m.label + element(m.gan, A.GAN_WX[m.gan]) + '<small>' + m.star + '</small></span>';
           }).join('') : '四柱与藏干未见该取象') + '</p>' + relationReading(chart, positions, kinAdvice[i]) + '</article>';
-      }).join('') + '</div><p class="tiny">按本版六亲取法查看十神落柱，再看这些柱的合与牵制。</p>';
+      }).join('') + '</div><p class="tiny">按本版六亲取法查看十神落柱，再看这些柱的合与牵制。</p>' +
+      (hasGender ? '' : '<p class="tiny">当前命盘未选乾造或坤造。正式排盘时选择后，可查看伴侣和子女的取象。</p>');
   }
 
   function diagram(chart, tab, yun, year, gender) {
@@ -329,7 +333,7 @@
     return '<div class="section-hd"><h2 class="t">智能图示</h2><span class="a">' +
       (year && tab === 'relations' ? year.year + ' 流年 · ' + yun.gz + '大运' : '四柱结构') +
       '</span></div><div class="card diagram-card"><div class="diagram-tabs" aria-label="图示类型">' +
-      Object.keys(tabLabels).filter(function (key) { return gender || key !== 'kin'; }).map(function (key) {
+      Object.keys(tabLabels).map(function (key) {
         return '<button data-diagram="' + key + '" aria-pressed="' + (key === tab) + '">' + tabLabels[key] + '</button>';
       }).join('') + '</div><div class="diagram-body">' + content + '</div></div>';
   }
